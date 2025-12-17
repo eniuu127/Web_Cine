@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EnWing Cinema</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+</head>
+<body>
+  <header class="topbar">
+    <div class="container nav">
+      <div class="nav-left">
+        <div class="logo">LOGO</div>
+        <button class="pill white">ĐỊA ĐIỂM ▼</button>
+      </div>
+
+      <nav class="nav-center">
+        <a class="pill red active" href="#">TRANG CHỦ</a>
+        <a class="pill red" href="#">LỊCH CHIẾU</a>
+        <a class="pill red" href="#">GIÁ VÉ</a>
+        <a class="pill red" href="#">ƯU ĐÃI</a>
+      </nav>
+
+      <div class="nav-right">
+        <button class="pill white">ĐĂNG NHẬP</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+
+    <section class="hero container-fluid">
+        <div class="slider" id="slider">
+            <div class="slides" id="slides"></div>
+
+            <button class="nav-btn prev" id="prevBtn">‹</button>
+            <button class="nav-btn next" id="nextBtn">›</button>
+
+            <div class="dots" id="dots"></div>
+        </div>
+    </section>
+
+
+
+  
+
+    <section class="container content">
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab active" data-filter="NOW_SHOWING">Phim đang chiếu</button>
+        <button class="tab" data-filter="COMING_SOON">Phim sắp chiếu</button>
+        <button class="tab" data-filter="SPECIAL">Suất chiếu đặc biệt</button>
+      </div>
+
+      <!-- Movie grid -->
+      <div class="movie-grid" id="movieGrid"></div>
+
+      <!-- Bottom 2 columns like your UI -->
+      <div class="bottom-grid">
+        <section class="box">
+          <h2 class="box-title">Combo big sale</h2>
+          <div class="combo-row">
+            <div class="combo-card"></div>
+            <div class="combo-card"></div>
+            <div class="combo-card"></div>
+          </div>
+        </section>
+
+        <section class="box">
+          <h2 class="box-title center">Tin tức trong tuần</h2>
+          <p class="news center">Sold out Sold out Sold out Sold out</p>
+        </section>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="container-fluid">About me</div>
+    </footer>
+  </main>
+
+  <script src="/js/trangchu.js"></script>
+</body>
+</html>
