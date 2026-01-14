@@ -1,14 +1,17 @@
 package com.example.cinebooking.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import com.example.cinebooking.entity.Seat;
+import java.util.Optional;
+
 import java.util.List;
+import org.springframework.data.jpa.repository.JpaRepository;
+import com.example.cinebooking.domain.entity.Seat;
 
-public interface SeatRepository extends JpaRepository<Seat, Long> {
-    // Tùy chỉnh phương thức truy vấn theo room id
-    List<Seat> findByRoomId(Long roomId);
-    // tương đương = SELECT * FROM seats WHERE room_id = ?
+public interface SeatRepository extends JpaRepository<Seat, Long>{
+    // hiển thị sơ đồ ghế 1 phòng theo thứ tự mã ghế sắp xếp A1 - A2
+    List<Seat> findByRoom_RoomIdOrderBySeatCodeAsc(Long roomId);
 
-    boolean existsByRoomIdAndRowAndNumber(Long roomId, String row, Integer number);
-    // kiểm tra xem ghế có tồn tại trong phòng chiếu hay không
+    Optional<Seat> findByRoom_RoomIdAndSeatCode(Long roomId, String seatCode);
+    
+    // kiểm tra mã ghế đã tồn tại trong phòng chưa
+    boolean existsByRoom_RoomIdAndSeatCode(Long roomId, String seatCode);
 }
