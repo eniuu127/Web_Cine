@@ -8,6 +8,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import jakarta.persistence.*;
 
 @Getter @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "bookings",
     uniqueConstraints = @UniqueConstraint(

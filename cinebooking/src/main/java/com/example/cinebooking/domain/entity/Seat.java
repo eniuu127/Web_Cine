@@ -7,6 +7,8 @@ import java.util.List;
 
 @Getter @Setter
 @Entity
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(
     name = "seats", 
     uniqueConstraints = @UniqueConstraint(

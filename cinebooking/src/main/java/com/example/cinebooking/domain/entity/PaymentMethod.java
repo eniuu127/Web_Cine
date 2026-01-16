@@ -13,6 +13,8 @@ import lombok.*;
 
 @Getter @Setter
 @Entity
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "payment_methods")
 public class PaymentMethod {
 

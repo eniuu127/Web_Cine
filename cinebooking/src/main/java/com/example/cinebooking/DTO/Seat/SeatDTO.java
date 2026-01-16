@@ -8,7 +8,6 @@ public class SeatDTO {
     private Long seatId;
     private String seatCode;
     private String seatType;
-
-    private boolean booked; // trạng thái ghế đã được đặt hay chưa
-    
+    private Integer rowIndex;
+    private Integer colIndex;
 }

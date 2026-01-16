@@ -1,10 +1,9 @@
 package com.example.cinebooking.domain.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -14,6 +13,8 @@ import java.util.List;
 @Entity
 @Getter @Setter
 @Table(name = "movies")
+@NoArgsConstructor
+@AllArgsConstructor
 public class Movie {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "movie_id")
@@ -42,6 +43,7 @@ public class Movie {
     @Column(name="created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Showtime> showtimes = new ArrayList<>();
 

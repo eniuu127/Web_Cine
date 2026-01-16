@@ -45,7 +45,7 @@ public class SeatService {
             dto.setSeatId(seat.getSeatId());
             dto.setSeatCode(seat.getSeatCode());
             dto.setSeatType(seat.getSeatType());
-            dto.setBooked(bookedSeatIds.contains(seat.getSeatId()));
+            //dto.setBooked(bookedSeatIds.contains(seat.getSeatId()));
             return dto;
         }).collect(Collectors.toList()); 
     }    

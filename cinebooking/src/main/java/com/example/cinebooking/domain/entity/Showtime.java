@@ -1,6 +1,9 @@
 package com.example.cinebooking.domain.entity;
 
 import org.hibernate.annotations.CreationTimestamp;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,8 +12,9 @@ import lombok.*;
 
 
 @Getter @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
-
 @Table(
     name = "showtimes",
     indexes = {
@@ -57,9 +61,11 @@ public class Showtime {
     @Column(name="created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "showtime", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Ticket> tickets = new ArrayList<>();
-
+    
+    @JsonIgnore
     @OneToMany(mappedBy = "showtime", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Booking> bookings = new ArrayList<>();
 }

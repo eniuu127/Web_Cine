@@ -6,6 +6,8 @@ import lombok.*;
 
 @Getter @Setter
 @Entity
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(
     name = "tickets",
     uniqueConstraints = @UniqueConstraint(

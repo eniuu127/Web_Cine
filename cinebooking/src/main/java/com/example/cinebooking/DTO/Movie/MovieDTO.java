@@ -7,6 +7,6 @@ public class MovieDTO {
     private Long movieId;
     private String title;
     private String posterUrl;
-    private Integer duration; 
+    private Integer runtime; 
     private String status;
 }

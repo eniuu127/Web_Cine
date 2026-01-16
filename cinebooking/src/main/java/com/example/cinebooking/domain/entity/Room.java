@@ -10,7 +10,8 @@ import lombok.*;
 
 @Entity
 @Getter @Setter
-
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(
     name = "rooms", 
     uniqueConstraints = @UniqueConstraint(
