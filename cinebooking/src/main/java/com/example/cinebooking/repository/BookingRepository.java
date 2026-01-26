@@ -17,7 +17,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long>{
     boolean existsByBookingCode(String bookingCode);
 
     // tìm các booking giữ ghế quá hạn (chưa thanh toán) => huỷ
-    List<Booking> findByStatusAndExpiresAtBefore(
+    List<Booking> findByStatusAndExpiresAtIsNotNullAndExpiresAtBefore(
         String status, LocalDateTime time
     );
      
@@ -31,4 +31,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long>{
     }) 
     // hiển thị lịch sử mua vé của người dùng theo userId, sắp xếp theo ngày tạo mới nhất
     List<Booking> findByUser_UserIdOrderByCreatedAtDesc(Long userId);
+
+    
 }

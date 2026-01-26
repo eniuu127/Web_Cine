@@ -14,11 +14,15 @@ import lombok.*;
         name = "uk_showtime_seat",
         columnNames = {"showtime_id", "seat_id"}),
         // đảm bảo cùng 1 suất chiếu, không có 2 vé cho cùng 1 ghế được bán
-        indexes =
+        indexes = {
             @Index(
                 name = "idx_ticket_booking",
                 columnList = "booking_id"
-            )
+            ),
+            @Index(
+                name = "idx_ticket_showtime",
+                columnList = "showtime_id"
+            ) }
 )
 
 public class Ticket {

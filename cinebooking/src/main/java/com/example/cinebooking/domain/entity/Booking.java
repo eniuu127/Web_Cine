@@ -37,7 +37,7 @@ public class Booking {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
         name = "user_id", 
-        nullable=false,
+        nullable=true,
         foreignKey = @ForeignKey(name="fk_booking_user")
     )
     private User user;
@@ -45,7 +45,7 @@ public class Booking {
     @OneToOne(mappedBy = "booking", fetch = FetchType.LAZY)
     private Payment payment;
 
-    @Column(name = "guest_mail", nullable = false)
+    @Column(name = "guest_mail", nullable = true)
     private String guestMail;
 
     @Column (nullable = false)
@@ -64,7 +64,4 @@ public class Booking {
 
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Ticket> tickets = new ArrayList<>();
-
-
-
 }

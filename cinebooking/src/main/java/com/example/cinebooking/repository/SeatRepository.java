@@ -8,7 +8,7 @@ import com.example.cinebooking.domain.entity.Seat;
 
 public interface SeatRepository extends JpaRepository<Seat, Long>{
     // hiển thị sơ đồ ghế 1 phòng theo thứ tự mã ghế sắp xếp A1 - A2
-    List<Seat> findByRoom_RoomIdOrderBySeatCodeAsc(Long roomId);
+    List<Seat> findByRoom_RoomId(Long roomId);
 
     Optional<Seat> findByRoom_RoomIdAndSeatCode(Long roomId, String seatCode);
     

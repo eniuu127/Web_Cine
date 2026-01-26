@@ -38,7 +38,7 @@ public class RoomService {
         if(!roomRepository.existsById(roomId)) {
             throw new RuntimeException("Phòng chiếu không tìm thấy: " + roomId);
         }
-        return seatRepository.findByRoom_RoomIdOrderBySeatCodeAsc(roomId)
+        return seatRepository.findByRoom_RoomId(roomId)
             .stream()
             .map(this::toDTO)
             .collect(Collectors.toList());

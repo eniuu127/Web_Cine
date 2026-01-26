@@ -1,7 +1,7 @@
 package com.example.cinebooking.repository;
 
 import java.util.List;
-
+import java.util.Set;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -20,10 +20,23 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     List<Ticket> findByShowtime_ShowtimeId(Long showtimeId);
     
     // api trả về danh sách id ghế đã được đặt trong suất chiếu
+    // SOLD = booking done
     @Query("""
         select t.seat.seatId
         from Ticket t
         where t.showtime.showtimeId = :showtimeId
+        and t.booking.status = 'CONFIRMED'
     """)
-    List<Long> findBookedSeatIdsByShowtimeId(@Param("showtimeId") Long showtimeId);
+    Set<Long> findSeatIdsSoldByShowtimeId(@Param("showtimeId") Long showtimeId);
+
+    // HELD = booking pending
+    @Query("""
+        select t.seat.seatId
+        from Ticket t
+        where t.showtime.showtimeId = :showtimeId
+            and t.booking.status = 'PENDING'
+            and t.booking.expiresAt is not null
+            and t.booking.expiresAt > current_timestamp
+    """)
+    Set<Long> findSeatIdsHeldByShowtimeId(@Param("showtimeId") Long showtimeId);
 }

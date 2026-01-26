@@ -1,9 +1,10 @@
 package com.example.cinebooking.DTO.Seat;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 
-@Getter @Setter
-// màn hình hiển thị thông tin ghế
+@Getter
+@Setter
 public class SeatDTO {
     private Long seatId;
     private String seatCode;

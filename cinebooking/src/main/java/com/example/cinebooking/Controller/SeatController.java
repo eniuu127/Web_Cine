@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.cinebooking.DTO.Seat.SeatDTO;
+import com.example.cinebooking.DTO.Seat.SeatStatusDTO;
 import com.example.cinebooking.service.SeatService;
 
 @RestController
@@ -21,7 +21,9 @@ public class SeatController {
     }
 
     @GetMapping("/by-showtime/{showtimeId}")
-    public List<SeatDTO> getSeatsByShowtime(@PathVariable Long showtimeId){
-        return seatService.getSeatsByShowtime(showtimeId);
+    public List<SeatStatusDTO> getSeatsByShowtime(@PathVariable Long showtimeId){
+        return seatService.getSeatsWithStatus(showtimeId);
     }
+
+    // done api [{"seatId":1,"seatCode":"A1","rowIndex":0,"colIndex":0,"seatType":"STANDARD","status":"AVAILABLE"},
 }

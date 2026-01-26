@@ -2,6 +2,7 @@ package com.example.cinebooking.Controller;
 
 import java.util.List;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,9 +20,9 @@ public class ShowtimeController {
     public ShowtimeController(ShowtimeService showtimeService) {
         this.showtimeService = showtimeService;
     }
-    @GetMapping("/by-movie/{movieId}")
-    public List<ShowtimeDTO> getByMovie(@PathVariable Long movieId) {
-        return showtimeService.getShowtimeByMovie(movieId);
+    @GetMapping("/showtime/{id}/seats")
+    public ResponseEntity<?> getSeatMap(@PathVariable Long id) {
+        return ResponseEntity.ok(showtimeService.getSeatMapByShowtime(id));
     }
     
 }
