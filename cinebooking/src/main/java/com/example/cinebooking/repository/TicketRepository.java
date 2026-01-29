@@ -25,18 +25,8 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
         select t.seat.seatId
         from Ticket t
         where t.showtime.showtimeId = :showtimeId
-        and t.booking.status = 'CONFIRMED'
+        and t.booking.status = 'PAID'
     """)
     Set<Long> findSeatIdsSoldByShowtimeId(@Param("showtimeId") Long showtimeId);
 
-    // HELD = booking pending
-    @Query("""
-        select t.seat.seatId
-        from Ticket t
-        where t.showtime.showtimeId = :showtimeId
-            and t.booking.status = 'PENDING'
-            and t.booking.expiresAt is not null
-            and t.booking.expiresAt > current_timestamp
-    """)
-    Set<Long> findSeatIdsHeldByShowtimeId(@Param("showtimeId") Long showtimeId);
 }

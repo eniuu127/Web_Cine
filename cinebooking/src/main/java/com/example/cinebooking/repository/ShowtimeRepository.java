@@ -16,8 +16,22 @@ public interface ShowtimeRepository extends JpaRepository<Showtime, Long> {
     List<Showtime> findByRoom_RoomIdAndStartTimeBetweenOrderByStartTimeAsc(
         Long roomId, LocalDateTime from, LocalDateTime to 
     );
-
+    // tìm kiếm theo thời gian
     List<Showtime> findByStartTimeBetweenOrderByStartTimeAsc(
         LocalDateTime from, LocalDateTime to
     );
+    // admin kiểm tra
+    List<Showtime> findByRoom_RoomIdAndStartTimeLessThanAndEndTimeGreaterThan(
+        Long roomId, LocalDateTime end, LocalDateTime start);
+
+    List<Showtime> findByMovieMovieIdAndStartTimeGreaterThanEqualAndStartTimeLessThan(
+        Long movieId,
+        LocalDateTime from,
+        LocalDateTime to
+    );
+
+    List<Showtime> findByMovieMovieIdAndStartTimeBetweenOrderByStartTimeAsc(
+        Long movieId, LocalDateTime from, LocalDateTime to
+    );
+
 }

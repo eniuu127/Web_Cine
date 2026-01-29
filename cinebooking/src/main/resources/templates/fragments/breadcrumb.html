@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+<section th:fragment="breadcrumb(items, currentTitle)" class="cb-breadcrumb">
+  <div class="cb-container">
+
+    <a class="cb-bc-home" th:href="@{/trangchu}" title="Trang chủ">🏠</a>
+
+    <!-- items: list of {label, href} -->
+    <span th:each="it : ${items}">
+      <span class="cb-bc-sep">›</span>
+      <a class="cb-bc-link" th:href="${it.href}" th:text="${it.label}">Link</a>
+    </span>
+
+    <span class="cb-bc-sep">›</span>
+    <span class="cb-bc-current" th:text="${currentTitle}">CHI TIẾT PHIM</span>
+  </div>
+</section>
+</body>
+</html>

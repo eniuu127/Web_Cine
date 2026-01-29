@@ -11,7 +11,7 @@ import com.example.cinebooking.DTO.Seat.SeatStatusDTO;
 import com.example.cinebooking.service.SeatService;
 
 @RestController
-@RequestMapping("api/seats")
+@RequestMapping("/api/seats")
 public class SeatController {
 
     private final SeatService seatService;

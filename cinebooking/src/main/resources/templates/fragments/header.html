@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+<header th:fragment="header" class="cb-topbar">
+  <div class="cb-container cb-nav">
+    <div class="cb-nav-left">
+      <a class="cb-logo" th:href="@{/trangchu}">LOGO</a>
+      <button class="cb-btn cb-btn--white" type="button">ĐỊA ĐIỂM ▼</button>
+    </div>
+
+    <nav class="cb-nav-center">
+      <a class="cb-btn cb-btn--red cb-btn--active" th:href="@{/trangchu}">TRANG CHỦ</a>
+      <a class="cb-btn cb-btn--red" href="#">LỊCH CHIẾU</a>
+      <a class="cb-btn cb-btn--red" href="#">GIÁ VÉ</a>
+      <a class="cb-btn cb-btn--red" href="#">ƯU ĐÃI</a>
+    </nav>
+
+    <!-- <div class="cb-nav-right">
+      <a class="cb-btn cb-btn--white" href="#">ĐĂNG NHẬP</a>
+    </div> -->
+    <div class="cb-nav-right">
+      <!-- Khi CHƯA login -->
+      <a id="navLoginBtn" class="cb-btn cb-btn--white" href="/login">ĐĂNG NHẬP</a>
+
+      <!-- Khi ĐÃ login -->
+      <div id="navUserBox" style="display:none; align-items:center; gap:10px;">
+        <span id="navHello" class="cb-muted" style="font-weight:800;"></span>
+        <button id="navLogoutBtn" class="cb-btn cb-btn--white" type="button">ĐĂNG XUẤT</button>
+      </div>
+  </div>
+
+  </div>
+</header>
+
+</body>
+</html>

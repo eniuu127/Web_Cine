@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/base :: layout(~{::title}, ~{::section})}">
+<head>
+  <title>Movie Detail</title>
+</head>
+
+<!-- ✅ WRAPPER: để breadcrumb full-width -->
+<section>
+
+  <!-- ✅ Breadcrumb full-width (giống ảnh 1/3) -->
+  <div th:replace="~{fragments/breadcrumb :: breadcrumb(${bcItems}, ${bcCurrent})}"></div>
+
+  <!-- ✅ Content vẫn nằm trong container -->
+  <section class="cb-container cb-content" style="padding-top:18px;">
+    <input type="hidden" id="movieId" th:value="${movieId}"/>
+
+    <div style="display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap;">
+      <!-- Poster -->
+      <div style="width:220px; height:320px; border:1px solid rgba(255,255,255,.2); border-radius:10px; overflow:hidden; background:#111;">
+        <img id="poster" src="" alt="poster"
+             style="width:100%;height:100%;object-fit:cover;display:block;"
+             onerror="this.onerror=null; this.src='/image/trangchu/no-poster.png';">
+      </div>
+
+      <!-- Info + showtimes -->
+      <div style="flex:1; min-width:260px;">
+        <h2 id="title" style="font-size:22px; margin-bottom:8px;">...</h2>
+
+        <div style="opacity:.85; line-height:1.6;">
+          <div><b>Thời lượng:</b> <span id="runtime">...</span> phút</div>
+          <div><b>Trạng thái:</b> <span id="status">...</span></div>
+        </div>
+
+        <div style="margin-top:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <label style="opacity:.85;">Chọn ngày:</label>
+          <input id="datePicker" type="date" style="padding:6px 10px; border-radius:8px;">
+          <button id="btnLoad" class="cb-btn cb-btn--white" type="button">Tải suất chiếu</button>
+        </div>
+
+        <div style="margin-top:16px;">
+          <h3 style="font-size:18px; margin-bottom:10px;">Suất chiếu</h3>
+          <div id="showtimeList" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
+          <div id="showtimeEmpty" class="cb-muted" style="margin-top:10px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (() => {
+        const movieId = document.getElementById("movieId").value;
+        const poster = document.getElementById("poster");
+        const title = document.getElementById("title");
+        const runtime = document.getElementById("runtime");
+        const status = document.getElementById("status");
+
+        const datePicker = document.getElementById("datePicker");
+        const btnLoad = document.getElementById("btnLoad");
+        const listEl = document.getElementById("showtimeList");
+        const emptyEl = document.getElementById("showtimeEmpty");
+
+        // ✅ (khuyến nghị) update breadcrumb title theo movie thật
+        const bcCurrentEl = document.querySelector(".cb-bc-current");
+
+        function esc(s){ return String(s ?? "").replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m])); }
+
+        const today = new Date();
+        datePicker.value = today.toISOString().slice(0,10);
+
+        async function loadMovie(){
+          const res = await fetch(`/api/movies/${movieId}`);
+          if(!res.ok) throw new Error("Load movie failed: " + res.status);
+          const m = await res.json();
+
+          title.textContent = m.title ?? "";
+          runtime.textContent = m.runtime ?? "";
+          status.textContent = m.status ?? "";
+
+          if (bcCurrentEl) bcCurrentEl.textContent = (m.title || "CHI TIẾT PHIM").toUpperCase();
+
+          poster.src = (m.posterUrl && m.posterUrl.trim())
+            ? m.posterUrl
+            : "/image/trangchu/no-poster.png";
+        }
+
+        function renderShowtimes(items){
+          listEl.innerHTML = "";
+          emptyEl.textContent = "";
+
+          if(!items || items.length === 0){
+            emptyEl.textContent = "Không có suất chiếu cho ngày này.";
+            return;
+          }
+
+          items.forEach(st => {
+            const btn = document.createElement("button");
+            btn.className = "cb-btn cb-btn--red";
+            btn.type = "button";
+            btn.style.borderRadius = "12px";
+            btn.style.padding = "10px 14px";
+            btn.innerHTML = `
+              <div style="font-weight:800;">${esc(st.startTime ?? "")}</div>
+              <div style="font-size:11px; opacity:.9;">${esc(st.roomName ?? "")}</div>
+            `;
+            btn.addEventListener("click", () => {
+              const target = `/showtimes/${st.showtimeId}/seats`;
+              const token = localStorage.getItem("token");
+
+              if (!token) {
+                window.location.href = `/login?back=${encodeURIComponent(target)}`;
+                return;
+              }
+
+              window.location.href = target;
+            });
+
+            listEl.appendChild(btn);
+          });
+        }
+
+        async function loadShowtimes(){
+          const date = datePicker.value;
+          const res = await fetch(`/api/movies/${movieId}/showtimes?date=${encodeURIComponent(date)}`);
+          if(!res.ok) throw new Error("Load showtimes failed: " + res.status);
+          const items = await res.json();
+          renderShowtimes(items);
+        }
+
+        btnLoad.addEventListener("click", loadShowtimes);
+
+        loadMovie().then(loadShowtimes).catch(err => {
+          emptyEl.textContent = err.message;
+        });
+      })();
+    </script>
+  </section>
+
+</section>
+</html>

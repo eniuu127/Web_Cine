@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/base :: layout(~{::title}, ~{::section})}">
+<head>
+  <title>Đăng nhập</title>
+</head>
+
+<section class="cb-container cb-content" style="padding-top:18px;">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <!-- Tabs -->
+      <div class="auth-tabs">
+        <button id="btnTabLogin" class="auth-tab is-active" type="button">ĐĂNG NHẬP</button>
+        <button id="btnTabRegister" class="auth-tab" type="button">ĐĂNG KÝ</button>
+      </div>
+
+      <!-- TAB: LOGIN -->
+      <div id="tab-login" class="auth-pane">
+        <form id="loginForm" class="auth-form" autocomplete="on">
+          <label class="auth-label">Email <span class="auth-req">*</span></label>
+          <div class="auth-input-wrap">
+            <input class="auth-input" type="email" name="email" placeholder="Email" required>
+          </div>
+
+          <label class="auth-label">Mật khẩu <span class="auth-req">*</span></label>
+          <div class="auth-input-wrap">
+            <input class="auth-input" type="password" name="password" placeholder="Mật khẩu" required>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin: 4px 0 14px;">
+            <a class="auth-link" href="#" onclick="alert('Chưa làm quên mật khẩu'); return false;">Quên mật khẩu?</a>
+            <span class="cb-muted" style="font-size:12px;">* bắt buộc</span>
+          </div>
+
+          <button class="auth-submit" type="submit">ĐĂNG NHẬP</button>
+          <div id="loginMsg" class="auth-msg"></div>
+        </form>
+      </div>
+
+      <!-- TAB: REGISTER -->
+      <div id="tab-register" class="auth-pane" hidden>
+        <form id="registerForm" class="auth-form" autocomplete="on">
+          <div class="auth-grid">
+            <!-- Cột trái -->
+            <div class="auth-col">
+              <label class="auth-label">Họ tên <span class="auth-req">*</span></label>
+              <div class="auth-input-wrap">
+                <input class="auth-input" type="text" name="fullName" placeholder="Họ tên" required>
+              </div>
+
+              <label class="auth-label">Ngày sinh</label>
+              <div class="auth-input-wrap">
+                <input class="auth-input" type="date" name="dob" placeholder="Ngày sinh">
+              </div>
+
+              <label class="auth-label">Số điện thoại</label>
+              <div class="auth-input-wrap">
+                <input class="auth-input" type="tel" name="phone" placeholder="Số điện thoại" inputmode="tel">
+              </div>
+            </div>
+
+            <!-- Cột phải -->
+            <div class="auth-col">
+              <label class="auth-label">Email <span class="auth-req">*</span></label>
+              <div class="auth-input-wrap">
+                <input class="auth-input" type="email" name="email" placeholder="Email" required>
+              </div>
+
+              <label class="auth-label">Mật khẩu <span class="auth-req">*</span></label>
+              <div class="auth-input-wrap">
+                <input class="auth-input" type="password" name="password" placeholder="Mật khẩu" required minlength="6">
+              </div>
+
+              <label class="auth-label">Xác nhận lại mật khẩu <span class="auth-req">*</span></label>
+              <div class="auth-input-wrap">
+                <input class="auth-input" type="password" name="confirmPassword" placeholder="Xác nhận lại mật khẩu" required minlength="6">
+              </div>
+
+              <label class="auth-label">Giới tính</label>
+              <div class="auth-input-wrap">
+                <select class="auth-input" name="gender">
+                  <option value="">Chọn giới tính</option>
+                  <option value="MALE">Nam</option>
+                  <option value="FEMALE">Nữ</option>
+                  <option value="OTHER">Khác</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <label class="auth-check">
+            <input type="checkbox" name="agree" required>
+            <span>Tôi cam kết tuân theo <a href="#" class="auth-link">chính sách bảo mật</a> và <a href="#" class="auth-link">điều khoản sử dụng</a>.</span>
+          </label>
+
+          <button class="auth-submit" type="submit">ĐĂNG KÝ</button>
+          <div id="registerMsg" class="auth-msg"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      // Tabs
+      const btnLogin = document.getElementById("btnTabLogin");
+      const btnRegister = document.getElementById("btnTabRegister");
+      const paneLogin = document.getElementById("tab-login");
+      const paneRegister = document.getElementById("tab-register");
+
+      function showTab(which){
+        const isLogin = which === "login";
+        btnLogin.classList.toggle("is-active", isLogin);
+        btnRegister.classList.toggle("is-active", !isLogin);
+        paneLogin.hidden = !isLogin;
+        paneRegister.hidden = isLogin;
+      }
+      btnLogin.addEventListener("click", () => showTab("login"));
+      btnRegister.addEventListener("click", () => showTab("register"));
+
+      // Helper: đọc response an toàn (text + try parse JSON)
+      async function readResponseSmart(res){
+        const ct = (res.headers.get("content-type") || "").toLowerCase();
+        const text = await res.text().catch(() => "");
+        let json = null;
+
+        const looksLikeJson = text && (text.trim().startsWith("{") || text.trim().startsWith("["));
+        if (ct.includes("application/json") || looksLikeJson) {
+          try { json = JSON.parse(text); } catch (e) { json = null; }
+        }
+        return { ct, text, json };
+      }
+
+      function getBackOrHome(){
+        const params = new URLSearchParams(window.location.search);
+        let back = params.get("back");
+
+        if(back){
+          try { back = decodeURIComponent(back); } catch(e) {}
+        }
+
+        // chỉ cho phép redirect nội bộ
+        if(!back || !back.startsWith("/")){
+          back = "/trangchu";
+        }
+        return back;
+      }
+
+      // Login
+      const loginForm = document.getElementById("loginForm");
+      const loginMsg = document.getElementById("loginMsg");
+
+      loginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        loginMsg.style.color = "#b00020";
+        loginMsg.textContent = "";
+
+        const fd = new FormData(loginForm);
+        const payload = {
+          email: (fd.get("email")||"").toString().trim(),
+          password: (fd.get("password")||"").toString()
+        };
+
+        try{
+          const res = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify(payload)
+          });
+
+          const { ct, text, json } = await readResponseSmart(res);
+
+          if(!res.ok){
+            loginMsg.textContent =
+              `Login failed: ${res.status} (${ct || "no-content-type"}) - ` +
+              (text ? text.slice(0, 300) : "(empty)");
+            return;
+          }
+
+          if(!json){
+            loginMsg.textContent =
+              `Login trả về KHÔNG phải JSON (${ct || "no-content-type"}). ` +
+              `Có thể bị redirect/chặn security. Response: ` +
+              (text ? text.slice(0, 200) : "(empty)");
+            return;
+          }
+
+          if(json.token){
+            localStorage.setItem("token", json.token);
+
+            // ✅ lưu user để header hiển thị fullName
+            localStorage.setItem("user", JSON.stringify({
+              userId: json.userId,
+              fullName: json.fullName,
+              role: json.role,
+              email: payload.email
+            }));
+
+            // ✅ cập nhật header ngay (nếu bạn expose window.refreshHeader)
+            if (window.refreshHeader) window.refreshHeader();
+          } else {
+            loginMsg.textContent = "Login OK nhưng không thấy token trong response.";
+            return;
+          }
+
+          window.location.href = getBackOrHome();
+
+        }catch(err){
+          loginMsg.textContent = "Lỗi mạng: " + err.message;
+        }
+      });
+
+      // Register (FIX Case 1)
+      const registerForm = document.getElementById("registerForm");
+      const registerMsg = document.getElementById("registerMsg");
+
+      registerForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        registerMsg.style.color = "#b00020";
+        registerMsg.textContent = "";
+
+        const fd = new FormData(registerForm);
+        const pw = (fd.get("password")||"").toString();
+        const cpw = (fd.get("confirmPassword")||"").toString();
+
+        if(pw !== cpw){
+          registerMsg.textContent = "Mật khẩu xác nhận không khớp.";
+          return;
+        }
+
+        const payload = {
+          fullName: (fd.get("fullName")||"").toString().trim(),
+          email: (fd.get("email")||"").toString().trim(),
+          password: pw,
+          phone: (fd.get("phone")||"").toString().trim(),
+          dob: (fd.get("dob")||"").toString(),
+          gender: (fd.get("gender")||"").toString()
+        };
+
+        try{
+          const res = await fetch("/api/auth/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify(payload),
+            redirect: "follow"
+          });
+
+          const { ct, text, json } = await readResponseSmart(res);
+
+          if(!res.ok){
+            registerMsg.textContent =
+              `Đăng ký thất bại: ${res.status} (${ct || "no-content-type"}) - ` +
+              (text ? text.slice(0, 300) : "(empty)");
+            return;
+          }
+
+          const isHtml = ct.includes("text/html") || (text && text.trim().startsWith("<!doctype"));
+          if(isHtml || !json){
+            const hint = res.redirected ? ` (redirected to: ${res.url})` : "";
+            registerMsg.textContent =
+              `Đăng ký trả về KHÔNG phải JSON${hint}. ` +
+              `Có thể bị redirect/chặn security hoặc route sai. ` +
+              `Content-Type: ${ct || "no-content-type"}. ` +
+              `Response snippet: ${text ? text.slice(0, 200) : "(empty)"}`;
+            return;
+          }
+
+          // OK + JSON thật
+          registerMsg.style.color = "#0a7a2f";
+          registerMsg.textContent = "Đăng ký thành công! Hãy đăng nhập.";
+
+          // (tuỳ chọn) nếu bạn muốn auto-login sau register, bật block dưới
+          // if(json.token){
+          //   localStorage.setItem("token", json.token);
+          //   localStorage.setItem("user", JSON.stringify({
+          //     userId: json.userId,
+          //     fullName: json.fullName,
+          //     role: json.role,
+          //     email: payload.email
+          //   }));
+          //   if (window.refreshHeader) window.refreshHeader();
+          //   window.location.href = getBackOrHome();
+          //   return;
+          // }
+
+          registerForm.reset();
+          showTab("login");
+
+        }catch(err){
+          registerMsg.textContent = "Lỗi mạng: " + err.message;
+        }
+      });
+    })();
+  </script>
+</section>
+</html>

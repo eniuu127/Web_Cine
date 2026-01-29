@@ -10,7 +10,7 @@ import com.example.cinebooking.DTO.Payment.PaymentMethodDTO;
 import com.example.cinebooking.service.PaymentMethodService;
 
 @RestController
-@RequestMapping("/api/payment_method")
+@RequestMapping("/api/payment-method")
 public class PaymentMethodController {
 
     private final PaymentMethodService paymentMethodService;

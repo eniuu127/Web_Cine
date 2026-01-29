@@ -34,18 +34,19 @@ public class Booking {
     )
     private Showtime showtime;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(
-        name = "user_id", 
-        nullable=true,
-        foreignKey = @ForeignKey(name="fk_booking_user")
-    )
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "user_id", nullable = true)
     private User user;
+
 
     @OneToOne(mappedBy = "booking", fetch = FetchType.LAZY)
     private Payment payment;
 
-    @Column(name = "guest_mail", nullable = true)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payment_method_id", referencedColumnName = "code")
+    private PaymentMethod paymentMethod;
+
+    @Column(name = "guest_mail")
     private String guestMail;
 
     @Column (nullable = false)
@@ -55,6 +56,10 @@ public class Booking {
     @Column(name = "expires_at")
     private LocalDateTime expiresAt;
 
+    // redis holdId để tham chiếu đến ghế đã hold
+    @Column(name = "hold_id", nullable = false)
+    private String holdId;
+    
     @Column(name = "total_amount", nullable = false)
     private Integer totalAmount;
 

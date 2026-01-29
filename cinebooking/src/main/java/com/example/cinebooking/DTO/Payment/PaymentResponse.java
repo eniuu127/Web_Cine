@@ -8,5 +8,5 @@ public class PaymentResponse {
     private String methodCode;
     private Integer amount;
     private String paymentStatus; // SUCCESS, INIT
-    private String bookingStatus; // PAID, PENDING, CANCELED
+    private String bookingStatus; // PAID, PENDING, CANCELLED
 }

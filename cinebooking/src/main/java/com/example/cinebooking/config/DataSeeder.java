@@ -1,15 +1,27 @@
 package com.example.cinebooking.config;
 
-import com.example.cinebooking.domain.entity.*;
-import com.example.cinebooking.repository.*;
-import lombok.RequiredArgsConstructor;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.stereotype.Component;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
+
+import com.example.cinebooking.domain.entity.Movie;
+import com.example.cinebooking.domain.entity.PaymentMethod;
+import com.example.cinebooking.domain.entity.Room;
+import com.example.cinebooking.domain.entity.Seat;
+import com.example.cinebooking.domain.entity.Showtime;
+import com.example.cinebooking.domain.entity.User;
+import com.example.cinebooking.repository.MovieRepository;
+import com.example.cinebooking.repository.PaymentMethodRepository;
+import com.example.cinebooking.repository.RoomRepository;
+import com.example.cinebooking.repository.SeatRepository;
+import com.example.cinebooking.repository.ShowtimeRepository;
+import com.example.cinebooking.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
@@ -19,12 +31,38 @@ public class DataSeeder implements CommandLineRunner {
     private final RoomRepository roomRepository;
     private final SeatRepository seatRepository;
     private final ShowtimeRepository showtimeRepository;
+    private final UserRepository userRepository;
+    private final PaymentMethodRepository paymentMethodRepository;
 
     @Override
     public void run(String... args) {
 
-        // Tránh seed lại nhiều lần
-        if (movieRepository.count() > 0) {
+        /* ===================== USERS ===================== */
+        if (userRepository.count() == 0) {
+            User u1 = new User();
+            u1.setFullName("Test User 1");
+            u1.setEmail("u1@gmail.com");
+            u1.setPasswordHash("123456"); // fake data (đồ án) — không cần hash thật
+            u1.setRole("CUSTOMER");
+
+            userRepository.save(u1);
+
+            System.out.println("✅ Seed user DONE: u1@gmail.com (id auto)");
+        }
+        /* ===================== PAYMENT METHODS ===================== */
+        
+        seedPaymentMethod("MOMO", "MoMo Wallet", true, 1);
+        seedPaymentMethod("VNPAY", "VNPay Gateway", true, 2);
+        seedPaymentMethod("CASH", "Cash", true, 3);
+        seedPaymentMethod("BANK", "Bank Transfer", true, 4);
+
+        System.out.println(" Seed payment methods DONE");
+
+        // Nếu đã có core data + users thì mới skip
+        boolean hasCoreData = movieRepository.count() > 0;
+        boolean hasUsers = userRepository.count() > 0;
+
+        if (hasCoreData && hasUsers) {
             System.out.println("⏩ Data already exists, skip seeding");
             return;
         }
@@ -42,7 +80,7 @@ public class DataSeeder implements CommandLineRunner {
         movie2.setTitle("Avengers: Endgame");
         movie2.setDescription("Siêu anh hùng Marvel");
         movie2.setRuntime(181);
-        movie2.setPosterUrl("https://example.com/endgame.jpg");
+        //movie2.setPosterUrl("https://example.com/endgame.jpg");
         movie2.setStatus("NOW_SHOWING");
         movie2.setReleaseDate(LocalDate.of(2019, 4, 26));
 
@@ -62,6 +100,8 @@ public class DataSeeder implements CommandLineRunner {
         /* ===================== SEATS ===================== */
         seedSeats(room1, 4, 10); // 4 hàng x 10 ghế = 40
         seedSeats(room2, 3, 10); // 3 hàng x 10 ghế = 30
+        
+
 
         /* ===================== SHOWTIMES ===================== */
         Showtime showtime1 = new Showtime();
@@ -110,4 +150,18 @@ public class DataSeeder implements CommandLineRunner {
 
         seatRepository.saveAll(seats);
     }
+    
+        private void seedPaymentMethod(String code, String name, boolean active, int sortOrder) {
+            String normalized = code.trim().toUpperCase();
+
+            if (paymentMethodRepository.existsById(normalized)) return;
+
+            PaymentMethod m = new PaymentMethod();
+            m.setCode(normalized);
+            m.setName(name);
+            m.setActive(active);
+            m.setSortOrder(sortOrder);
+
+            paymentMethodRepository.save(m);
+        }
 }

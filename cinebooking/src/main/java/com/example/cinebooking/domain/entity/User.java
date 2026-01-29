@@ -31,7 +31,11 @@ public class User {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
+    @Column(nullable = false)
     private String role; // ví dụ: ADMIN, CUSTOMER
+
+    @Column(nullable = false)
+    private Boolean enabled = true;
 
     @CreationTimestamp
     @Column(name="created_at", nullable = false, updatable = false)
