@@ -110,14 +110,19 @@ public class PaymentService {
                     return p;
                 });
 
-        // nếu payment đã SUCCESS thì không cho đổi method nữa (tránh bừa)
+        // nếu payment đã SUCCESS thì không cho đổi method nữa
         if (PAYMENT_SUCCESS.equalsIgnoreCase(payment.getStatus())) {
             throw badRequest("Payment already SUCCESS. Cannot change method.");
         }
 
+        // ✅ 1) set vào PAYMENT
         payment.setPaymentMethod(method);
         payment.setAmount(booking.getTotalAmount());
         payment = paymentRepo.save(payment);
+
+        // ✅ 2) set luôn vào BOOKING để /api/bookings/{code} trả về paymentMethodName/cCode đúng
+        booking.setPaymentMethod(method);
+        bookingRepo.save(booking);
 
         return toResponse(booking, payment);
     }

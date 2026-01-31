@@ -1,7 +1,9 @@
 package com.example.cinebooking.Controller;
 
+import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.cinebooking.DTO.Seat.SeatStatusDTO;
@@ -29,6 +32,14 @@ public class ShowtimeController {
     }
 
     // ===================== PUBLIC =====================
+     @GetMapping("/showtimes/by-date")
+    public ResponseEntity<List<ShowtimeDetailDTO>> getShowtimesByDate(
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+    ) {
+        return ResponseEntity.ok(showtimeService.getScheduleByDate(date));
+    }
+    
     @GetMapping("/showtimes/{id}")
     public ResponseEntity<ShowtimeDetailDTO> getShowtimeDetail(@PathVariable Long id) {
         return ResponseEntity.ok(showtimeService.getShowtimeDetail(id));

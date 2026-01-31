@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Login | CineBooking</title>
+  <link rel="stylesheet" href="./admin_login.css" />
+</head>
+<body>
+  <div class="bg">
+    <div class="card">
+      <div class="brand">
+        <div class="brand-text">
+          <h1>Admin Panel</h1>
+          <p>Đăng nhập để quản trị hệ thống</p>
+        </div>
+      </div>
+
+      <form id="adminLoginForm" class="form" autocomplete="on" novalidate>
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" placeholder="admin@cine.com" />
+        </div>
+
+        <div class="field">
+          <label for="password">Mật khẩu</label>
+          <div class="pw-wrap">
+            <input id="password" name="password" type="password" placeholder="••••••••"/>
+            <button type="button" class="pw-toggle" id="togglePw" aria-label="Hiện/ẩn mật khẩu">👁</button>
+          </div>
+        </div>
+
+        <div class="row">
+          <label class="remember">
+            <input type="checkbox" id="remember" />
+            <span>Ghi nhớ đăng nhập</span>
+          </label>
+          <a class="link" href="#" id="forgotLink">Quên mật khẩu?</a>
+        </div>
+
+        <div id="errorBox" class="error" style="display:none;"></div>
+
+        <button id="btnLogin" class="btn" type="submit">
+          <span class="btn-text">Đăng nhập</span>
+          <span class="spinner" style="display:none;"></span>
+        </button>
+
+        <!-- <div class="hint">
+          <span>Demo (seed): </span>
+          <code>admin@cine.com / 123456</code>
+        </div> -->
+      </form>
+
+      <div class="footer">
+        <span>© CineBooking</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="./admin_login.js"></script>
+</body>
+</html>

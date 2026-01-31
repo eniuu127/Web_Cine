@@ -9,6 +9,7 @@ public class AdminMovieRequest {
     private String description;
     private Integer runtime;
     private String posterUrl;
+    private String trailerUrl;
     private String status;      // NOW_SHOWING / COMING_SOON / STOPPED ...
     private LocalDate releaseDate;
 }

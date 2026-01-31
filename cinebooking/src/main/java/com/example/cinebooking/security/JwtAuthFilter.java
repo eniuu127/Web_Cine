@@ -28,25 +28,48 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             String token = auth.substring(7);
             try {
                 Claims claims = JwtUtil.parse(token);
-
+                Long userId = toLong(claims.get("userId"));
                 String email = claims.getSubject();
-                String role = (String) claims.get("role");
 
-                var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
+                // role có thể là "USER" hoặc "ROLE_USER"
+                String roleRaw = (String) claims.get("role");
+                String role = normalizeRole(roleRaw); // => USER
 
-                var authentication = new UsernamePasswordAuthenticationToken(
-                        email, null, authorities);
+                var authorities = List.of(
+                        new SimpleGrantedAuthority("ROLE_" + role)
+                );
+
+                var authentication =
+                        new UsernamePasswordAuthenticationToken(userId, null, authorities);
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                request.setAttribute("userId", claims.get("userId"));
+                // set attribute cho controller dùng
+                request.setAttribute("userId", toLong(claims.get("userId")));
                 request.setAttribute("role", role);
-
+                request.setAttribute("email", email);
             } catch (Exception ex) {
                 SecurityContextHolder.clearContext();
             }
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    // ===== helpers =====
+    private String normalizeRole(String roleRaw) {
+        if (roleRaw == null) return null;
+        if (roleRaw.startsWith("ROLE_")) {
+            return roleRaw.substring("ROLE_".length());
+        }
+        return roleRaw;
+    }
+
+    private Long toLong(Object v) {
+        if (v == null) return null;
+        if (v instanceof Long l) return l;
+        if (v instanceof Integer i) return i.longValue();
+        if (v instanceof String s) return Long.valueOf(s);
+        return Long.valueOf(v.toString());
     }
 }

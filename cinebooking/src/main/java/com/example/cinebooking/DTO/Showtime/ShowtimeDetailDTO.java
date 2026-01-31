@@ -22,5 +22,5 @@ public class ShowtimeDetailDTO {
         private Long roomId;
         private String roomName;
         private String screenType;
-    
+        private Integer basePrice;
 }

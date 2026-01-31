@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/base :: layout(~{::title}, ~{::section})}">
+<head>
+  <title>Lịch sử đặt vé </title>
+</head>
+
+<section class="cb-container cb-content" style="padding-top:18px;">
+
+  <!-- Bạn có thể bỏ breadcrumb nếu không cần -->
+  <div class="cb-card" style="max-width:980px;margin:auto;padding:18px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+      <h2 style="margin:5px;">Lịch sử đặt vé</h2>
+      <div class="cb-muted" id="sumText"></div>
+    </div>
+
+    <div id="errBox" class="cb-muted" style="display:none;color:#ff8a80;margin-top:10px;"></div>
+    <div id="list" style="margin-top:14px;"></div>
+  </div>
+
+    <script>
+  function getToken(){ return localStorage.getItem("token"); }
+
+  function gotoLogin(){
+    window.location.href = "/login";
+  }
+
+  function showErr(msg){
+    const box = document.getElementById("errBox");
+    if(!box) { console.error("errBox not found:", msg); return; }
+    box.style.display = "block";
+    box.textContent = msg || "Lỗi không xác định";
+  }
+
+  function fmtMoney(v){
+    if(v == null) return "--";
+    return Number(v).toLocaleString("vi-VN") + " đ";
+  }
+  function fmtDT(s){
+    return s ? new Date(s).toLocaleString("vi-VN") : "--";
+  }
+
+  async function fetchHistory(){
+    const token = getToken();
+    if(!token) return null;
+
+    const res = await fetch("/api/bookings/history", {
+      headers: { "Authorization": "Bearer " + token }
+    });
+
+    if(res.status === 401 || res.status === 403) return "UNAUTH";
+    if(!res.ok){
+      const t = await res.text().catch(()=> "");
+      throw new Error("Không lấy được lịch sử (" + res.status + "). " + t);
+    }
+    return res.json();
+  }
+
+  function render(res){
+    const list = document.getElementById("list");
+    const sumText = document.getElementById("sumText");
+
+    if(!list) { console.error("#list not found"); return; }
+    list.innerHTML = "";
+
+    if(sumText){
+      sumText.textContent = res?.totalBookings != null ? `Tổng: ${res.totalBookings} vé` : "";
+    }
+
+    const items = res?.bookings || [];
+    if(items.length === 0){
+      list.innerHTML = `<div class="cb-muted">Bạn chưa có vé nào.</div>`;
+      return;
+    }
+
+    items.forEach(b => {
+      const card = document.createElement("div");
+      card.className = "ticket-card";
+
+      const seats = (b.seatCodes && b.seatCodes.length) ? b.seatCodes.join(" ") : "--";
+
+      const isPaid = (b.bookingStatus === "PAID");
+      const statusText = isPaid ? "ĐÃ THANH TOÁN" : "ĐÃ HỦY";
+      const statusClass = isPaid ? "is-paid" : "is-cancelled";
+
+      card.innerHTML = `
+        <div class="ticket-top">
+          <div class="ticket-title">
+            <div class="ticket-movie">${b.movieTitle || "—"}</div>
+            <div class="ticket-code">Mã booking: <b>${b.bookingCode || "--"}</b></div>
+          </div>
+
+          <div class="ticket-right">
+            <span class="ticket-badge ${statusClass}">${statusText}</span>
+
+            <a class="ticket-btn ${!isPaid ? "is-disabled" : ""}"
+               href="${isPaid ? `/tickets/${encodeURIComponent(b.bookingCode)}` : "#"}">
+              Xem chi tiết vé
+            </a>
+          </div>
+        </div>
+
+        <div class="ticket-grid">
+          <div class="trow"><span>Suất chiếu</span><b>${fmtDT(b.startTime)}</b></div>
+          <div class="trow"><span>Phòng</span><b>${b.roomName || "--"}</b></div>
+          <div class="trow"><span>Ghế</span><b>${seats}</b></div>
+          <div class="trow"><span>Tổng tiền</span><b class="tprice">${fmtMoney(b.totalAmount)}</b></div>
+          <div class="trow"><span>Ngày tạo</span><b>${fmtDT(b.createdAt)}</b></div>
+        </div>
+      `;
+
+      list.appendChild(card);
+    });
+  }
+
+  // ✅ QUAN TRỌNG: đảm bảo DOM có #list rồi mới chạy
+  document.addEventListener("DOMContentLoaded", async () => {
+    try{
+      const token = getToken();
+      if(!token){ gotoLogin(); return; }
+
+      const res = await fetchHistory();
+      if(res === "UNAUTH"){ gotoLogin(); return; }
+
+      render(res);
+    }catch(e){
+      showErr(e.message);
+    }
+  });
+</script>
+
+
+
+</section>
+</html>

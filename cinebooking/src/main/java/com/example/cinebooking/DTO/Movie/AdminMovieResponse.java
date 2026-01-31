@@ -11,6 +11,7 @@ public class AdminMovieResponse {
     private String title;
     private Integer runtime;
     private String posterUrl;
+    private String trailerUrl;
     private String status;
     private LocalDate releaseDate;
     private LocalDateTime createdAt;

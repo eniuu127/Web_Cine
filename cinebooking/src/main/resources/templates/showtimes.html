@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/base :: layout(~{::title}, ~{::section})}">
+
+<head>
+  <title>Lịch chiếu</title>
+</head>
+
+<section class="cb-container" style="padding:18px 0 40px;">
+  <div class="cb-card" style="padding:16px 18px;">
+    <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; justify-content:space-between;">
+      <div>
+        <div style="font-size:18px; font-weight:800;">LỊCH CHIẾU TRONG NGÀY</div>
+        <div class="cb-muted" style="margin-top:6px;">Chọn ngày để xem suất chiếu (group theo phim).</div>
+      </div>
+
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <input id="datePick" type="date" class="cb-input" style="min-width:170px;">
+        <button id="btnReload" class="cb-btn cb-btn--red" type="button">Tải lại</button>
+      </div>
+    </div>
+
+    <hr style="border-color: rgba(255,255,255,.08); margin:14px 0;">
+
+    <div id="stEmpty" class="cb-muted" style="padding:10px 0;"></div>
+    <div id="stGrid" class="cb-st-grid"></div>
+  </div>
+
+  <!-- ✅ script để trong section luôn cho chắc chắn base render xong là có -->
+  <script th:src="@{/js/showtime.js}"></script>
+</section>
+
+</html>

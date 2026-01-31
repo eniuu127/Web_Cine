@@ -31,6 +31,9 @@ public class Movie {
 
     @Column(name = "poster_url", nullable = false)
     private String posterUrl;
+    
+    @Column(name = "trailer_url", length = 255)
+    private String trailerUrl;
 
     @Column(name = "status", nullable = false)
     private String status;

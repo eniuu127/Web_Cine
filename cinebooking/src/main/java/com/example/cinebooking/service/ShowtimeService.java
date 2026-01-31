@@ -1,5 +1,6 @@
 package com.example.cinebooking.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
@@ -31,12 +32,11 @@ public class ShowtimeService {
     private final RoomRepository roomRepo;
 
     public ShowtimeService(ShowtimeRepository showtimeRepository,
-                            SeatRepository seatRepo,
-                            TicketRepository ticketRepo,
-                            RedisSeatHoldService holdService,
-                            MovieRepository movieRepo,
-                            RoomRepository roomRepo
-    ) {
+                           SeatRepository seatRepo,
+                           TicketRepository ticketRepo,
+                           RedisSeatHoldService holdService,
+                           MovieRepository movieRepo,
+                           RoomRepository roomRepo) {
         this.showtimeRepository = showtimeRepository;
         this.seatRepo = seatRepo;
         this.ticketRepo = ticketRepo;
@@ -44,43 +44,67 @@ public class ShowtimeService {
         this.movieRepo = movieRepo;
         this.roomRepo = roomRepo;
     }
-    // ============= PUBLIC =================
-    public ShowtimeDetailDTO getShowtimeDetail(Long id) {
-        Showtime st = showtimeRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Showtime not found"));
 
+    // ================== MAPPER (tối ưu dùng lại DTO cũ) ==================
+    private ShowtimeDetailDTO toDetailDTO(Showtime st) {
         var movie = st.getMovie();
         var room = st.getRoom();
 
         return new ShowtimeDetailDTO(
-                st.getShowtimeId() != null ? st.getShowtimeId() : st.getShowtimeId(), 
+                st.getShowtimeId(),
                 st.getStartTime(),
                 st.getEndTime(),
 
-                movie.getMovieId(),     
+                movie.getMovieId(),
                 movie.getTitle(),
                 movie.getPosterUrl(),
                 movie.getRuntime(),
                 String.valueOf(movie.getStatus()),
 
-                room.getRoomId(),       
+                room.getRoomId(),
                 room.getRoomName(),
-                room.getScreenType()
+                room.getScreenType(),
+                st.getBasePrice()
         );
     }
 
-    public List<SeatStatusDTO> getSeatMapByShowtime(Long showtimeId){
+    // ============= PUBLIC =================
+
+    public ShowtimeDetailDTO getShowtimeDetail(Long id) {
+        Showtime st = showtimeRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Showtime not found"));
+        return toDetailDTO(st);
+    }
+
+    /**
+     * Lịch chiếu theo ngày -> trả List<ShowtimeDetailDTO> (DTO cũ).
+     * FE sẽ group theo movieId để render giống ảnh Beta.
+     */
+    public List<ShowtimeDetailDTO> getScheduleByDate(LocalDate date) {
+        if (date == null) date = LocalDate.now();
+
+        LocalDateTime from = date.atStartOfDay();
+        LocalDateTime to = date.plusDays(1).atStartOfDay();
+
+        return showtimeRepository
+                .findByStartTimeGreaterThanEqualAndStartTimeLessThanOrderByStartTimeAsc(from, to)
+                .stream()
+                .map(this::toDetailDTO)
+                .toList();
+    }
+
+    public List<SeatStatusDTO> getSeatMapByShowtime(Long showtimeId) {
         Showtime st = showtimeRepository.findById(showtimeId)
                 .orElseThrow(() -> new RuntimeException("Showtime not found"));
 
         Long roomId = st.getRoom().getRoomId();
 
-        // 1 lấy tất cả ghế trong phòng
+        // 1) lấy tất cả ghế trong phòng
         List<Seat> seats = seatRepo.findByRoom_RoomId(roomId);
 
-        // 2  ghế đã bán (DB) - Ticket chỉ tạo khi PAID
+        // 2) ghế đã bán (DB) - Ticket chỉ tạo khi PAID
         Set<Long> soldSeatIds = ticketRepo.findSeatIdsSoldByShowtimeId(showtimeId);
-                
+
         // 3) ghế đang HOLD (Redis TTL)
         Set<Long> heldSeatIds = holdService.getHeldSeatIds(showtimeId);
 
@@ -104,10 +128,11 @@ public class ShowtimeService {
     }
 
     // =================== ADMIN ====================
-    // Admin list all showtimes
+
+    // Admin list all showtimes (tối ưu: không gọi findById từng cái)
     public List<ShowtimeDetailDTO> adminGetAllShowtimes() {
         return showtimeRepository.findAll().stream()
-                .map(st -> getShowtimeDetail(st.getShowtimeId()))
+                .map(this::toDetailDTO)
                 .toList();
     }
 
@@ -147,7 +172,7 @@ public class ShowtimeService {
         } catch (Exception ignored) {}
 
         st = showtimeRepository.save(st);
-        return getShowtimeDetail(st.getShowtimeId());
+        return toDetailDTO(st);
     }
 
     public ShowtimeDetailDTO adminUpdateShowtime(Long showtimeId, Long movieId, Long roomId,
@@ -179,7 +204,7 @@ public class ShowtimeService {
         st.setBasePrice(basePrice);
 
         st = showtimeRepository.save(st);
-        return getShowtimeDetail(st.getShowtimeId());
+        return toDetailDTO(st);
     }
 
     public void adminDeleteShowtime(Long showtimeId) {
@@ -196,12 +221,6 @@ public class ShowtimeService {
         if (basePrice == null || basePrice <= 0) throw bad("basePrice must be > 0");
     }
 
-    /**
-     * CẦN THÊM METHOD NÀY TRONG ShowtimeRepository:
-     *
-     * List<Showtime> findByRoom_RoomIdAndStartTimeLessThanAndEndTimeGreaterThan(
-     *        Long roomId, LocalDateTime end, LocalDateTime start);
-     */
     private void ensureNoOverlap(Long roomId, LocalDateTime start, LocalDateTime end, Long ignoreShowtimeId) {
         List<Showtime> overlaps =
                 showtimeRepository.findByRoom_RoomIdAndStartTimeLessThanAndEndTimeGreaterThan(roomId, end, start);

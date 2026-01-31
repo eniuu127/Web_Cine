@@ -1,36 +1,55 @@
 <!doctype html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <body>
+
 <header th:fragment="header" class="cb-topbar">
   <div class="cb-container cb-nav">
+
+    <!-- LEFT -->
     <div class="cb-nav-left">
       <a class="cb-logo" th:href="@{/trangchu}">LOGO</a>
-      <button class="cb-btn cb-btn--white" type="button">ĐỊA ĐIỂM ▼</button>
+      <button class="cb-btn cb-btn--white" type="button">Hà Nội</button>
     </div>
 
-    <nav class="cb-nav-center">
-      <a class="cb-btn cb-btn--red cb-btn--active" th:href="@{/trangchu}">TRANG CHỦ</a>
-      <a class="cb-btn cb-btn--red" href="#">LỊCH CHIẾU</a>
-      <a class="cb-btn cb-btn--red" href="#">GIÁ VÉ</a>
-      <a class="cb-btn cb-btn--red" href="#">ƯU ĐÃI</a>
+    <!-- CENTER NAV -->
+    <nav class="top-nav" aria-label="Main Navigation">
+      <a class="nav-pill" th:href="@{/trangchu}">TRANG CHỦ</a>
+      <a class="nav-pill" th:href="@{/showtimes}">LỊCH CHIẾU</a>
+      <a class="nav-pill" th:href="@{/prices}">GIÁ VÉ</a>
+      <a class="nav-pill" th:href="@{/my-bookings}">VÉ CỦA TÔI</a>
     </nav>
 
-    <!-- <div class="cb-nav-right">
-      <a class="cb-btn cb-btn--white" href="#">ĐĂNG NHẬP</a>
-    </div> -->
+    <!-- RIGHT -->
     <div class="cb-nav-right">
-      <!-- Khi CHƯA login -->
-      <a id="navLoginBtn" class="cb-btn cb-btn--white" href="/login">ĐĂNG NHẬP</a>
+      <a id="navLoginBtn" class="cb-btn cb-btn--white" th:href="@{/login}">ĐĂNG NHẬP</a>
 
-      <!-- Khi ĐÃ login -->
       <div id="navUserBox" style="display:none; align-items:center; gap:10px;">
         <span id="navHello" class="cb-muted" style="font-weight:800;"></span>
         <button id="navLogoutBtn" class="cb-btn cb-btn--white" type="button">ĐĂNG XUẤT</button>
       </div>
-  </div>
+    </div>
 
   </div>
 </header>
+
+<!-- ===== AUTO ACTIVE NAV (UX chuẩn) ===== -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const currentPath = window.location.pathname.replace(/\/$/, "");
+      const navItems = document.querySelectorAll(".nav-pill");
+
+      navItems.forEach(item => {
+        const hrefPath = new URL(item.href, window.location.origin).pathname.replace(/\/$/, "");
+
+        if (currentPath === hrefPath || currentPath.startsWith(hrefPath + "/")) {
+          item.classList.add("active");
+        } else {
+          item.classList.remove("active");
+        }
+      });
+    });
+  </script>
+
 
 </body>
 </html>

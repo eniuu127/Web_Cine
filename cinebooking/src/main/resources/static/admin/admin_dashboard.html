@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard | CineBooking</title>
+  <link rel="stylesheet" href="./admin_dashboard.css" />
+
+  <!-- Guard sớm: không có token/role thì đá về login -->
+  <script>
+    function getToken(){ return localStorage.getItem("cine_token") || sessionStorage.getItem("cine_token"); }
+    function getRole(){ return localStorage.getItem("cine_role") || sessionStorage.getItem("cine_role"); }
+    (function(){
+      const token = getToken();
+      const role = (getRole() || "").toUpperCase();
+      if (!token || role !== "ADMIN") window.location.replace("./admin_login.html");
+    })();
+  </script>
+</head>
+
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sb-top">
+        <div class="sb-title">
+          <div class="sb-h1">Admin Panel</div>
+          <div class="sb-sub">CineBooking</div>
+        </div>
+      </div>
+
+      <nav class="sb-nav">
+        <button class="nav-item active" data-page="dashboard">Dashboard</button>
+        <button class="nav-item" data-page="movies">Movies</button>
+        <button class="nav-item" data-page="showtimes">Showtimes</button>
+        <button class="nav-item" data-page="rooms">Rooms</button>
+        <button class="nav-item" data-page="seats">Seats</button>
+      </nav>
+
+      <div class="sb-bottom">
+        <button id="btnLogout" class="btn btn-ghost">Logout</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <div class="title" id="pageTitle">Dashboard</div>
+          <div class="muted" id="pageDesc">Thống kê tổng quan hệ thống</div>
+        </div>
+
+        <div class="top-actions">
+          <button id="btnRefresh" class="btn btn-ghost">Refresh</button>
+        </div>
+      </header>
+
+      <!-- ===== DASHBOARD ===== -->
+      <section class="page" id="page-dashboard">
+        <div class="grid-3">
+          <div class="card">
+            <div class="card-label">Movies</div>
+            <div class="card-value" id="kpiMovies">—</div>
+            <div class="card-note">Tổng số phim</div>
+          </div>
+          <div class="card">
+            <div class="card-label">Rooms</div>
+            <div class="card-value" id="kpiRooms">—</div>
+            <div class="card-note">Tổng số phòng</div>
+          </div>
+          <div class="card">
+            <div class="card-label">Showtimes</div>
+            <div class="card-value" id="kpiShowtimes">—</div>
+            <div class="card-note">Tổng số suất chiếu</div>
+          </div>
+        </div>
+
+        <div class="card big">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Tóm tắt nhanh</div>
+              <div class="muted">Lấy dữ liệu từ /api/admin/* hiện có</div>
+            </div>
+          </div>
+
+          <div class="summary">
+            <div class="summary-item">
+              <div class="summary-k">Movie status</div>
+              <div class="summary-v" id="movieStatusBreakdown">—</div>
+            </div>
+            <div class="summary-item">
+              <div class="summary-k">Room screen types</div>
+              <div class="summary-v" id="roomTypeBreakdown">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="note">
+          * Dashboard hiện thống kê theo dữ liệu Movies/Rooms/Showtimes (vì backend chưa có endpoint doanh thu).
+        </div>
+      </section>
+
+      <!-- ===== MOVIES ===== -->
+      <section class="page hidden" id="page-movies">
+        <div class="toolbar">
+          <div class="left">
+            <input id="movieSearch" class="input" placeholder="Search title..." />
+          </div>
+          <div class="right">
+            <button id="btnMovieAdd" class="btn">+ Add Movie</button>
+          </div>
+        </div>
+
+        <div class="card big">
+          <div class="table-wrap">
+            <table class="table" id="movieTable">
+              <thead>
+                <tr>
+                  <th style="width:90px;">ID</th>
+                  <th>Title</th>
+                  <th style="width:110px;">Trailer</th>
+                  <th style="width:140px;">Runtime</th>
+                  <th style="width:170px;">Status</th>
+                  <th style="width:210px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== SHOWTIMES ===== -->
+      <section class="page hidden" id="page-showtimes">
+        <div class="toolbar">
+          <div class="left muted">Tạo/sửa suất chiếu (AdminShowtimeRequest)</div>
+          <div class="right">
+            <button id="btnShowtimeAdd" class="btn">+ Add Showtime</button>
+          </div>
+        </div>
+
+        <div class="card big">
+          <div class="table-wrap">
+            <table class="table" id="showtimeTable">
+              <thead>
+                <tr>
+                  <th style="width:90px;">ID</th>
+                  <th>Movie</th>
+                  <th>Room</th>
+                  <th style="width:200px;">Start</th>
+                  <th style="width:200px;">End</th>
+                  <th style="width:210px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== ROOMS ===== -->
+      <section class="page hidden" id="page-rooms">
+        <div class="toolbar">
+          <div class="left muted">Quản lý phòng chiếu</div>
+          <div class="right">
+            <button id="btnRoomAdd" class="btn">+ Add Room</button>
+          </div>
+        </div>
+
+        <div class="card big">
+          <div class="table-wrap">
+            <table class="table" id="roomTable">
+              <thead>
+                <tr>
+                  <th style="width:90px;">ID</th>
+                  <th>Room Name</th>
+                  <th style="width:220px;">Screen Type</th>
+                  <th style="width:210px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== SEATS ===== -->
+      <section class="page hidden" id="page-seats">
+        <div class="card big">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Seat Management</div>
+              <div class="muted">Generate/Clear seat map theo room</div>
+            </div>
+          </div>
+
+          <div class="seat-tools">
+            <div class="field">
+              <label>Room</label>
+              <select id="seatRoomSelect" class="select"></select>
+            </div>
+            <div class="field">
+              <label>Rows</label>
+              <input id="seatRows" class="input" type="number" min="1" value="8"/>
+            </div>
+            <div class="field">
+              <label>Cols</label>
+              <input id="seatCols" class="input" type="number" min="1" value="10"/>
+            </div>
+            <div class="field">
+              <label>Seat Type</label>
+              <select id="seatType" class="select">
+                <option value="STANDARD">STANDARD</option>
+                <option value="VIP">VIP</option>
+              </select>
+            </div>
+
+            <div class="seat-actions">
+              <button id="btnGenerateSeats" class="btn">Generate</button>
+              <button id="btnClearSeats" class="btn btn-danger">Clear</button>
+              <button id="btnReloadSeats" class="btn btn-ghost">Reload</button>
+            </div>
+          </div>
+
+          <div class="seat-grid-wrap">
+            <div class="muted" id="seatMeta">—</div>
+            <div class="seat-grid" id="seatGrid"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Toast -->
+      <div class="toast" id="toast"></div>
+    </main>
+  </div>
+
+  <!-- MODAL -->
+  <div class="modal hidden" id="modal">
+    <div class="modal-backdrop" data-close="1"></div>
+    <div class="modal-card">
+      <div class="modal-head">
+        <div class="modal-title" id="modalTitle">—</div>
+        <button class="icon-btn" id="modalClose">✕</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-foot" id="modalFoot"></div>
+    </div>
+  </div>
+
+  <script src="./admin_dashboard.js" defer></script>
+</body>
+</html>

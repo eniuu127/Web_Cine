@@ -17,7 +17,9 @@ import com.example.cinebooking.DTO.Booking.CreateBookingRequest;
 import com.example.cinebooking.DTO.Booking.CreateBookingResponse;
 import com.example.cinebooking.domain.entity.Booking;
 import com.example.cinebooking.domain.entity.BookingItem;
+import com.example.cinebooking.domain.entity.Movie;
 import com.example.cinebooking.domain.entity.PaymentMethod;
+import com.example.cinebooking.domain.entity.Room;
 import com.example.cinebooking.domain.entity.Seat;
 import com.example.cinebooking.domain.entity.Showtime;
 import com.example.cinebooking.domain.entity.Ticket;
@@ -133,7 +135,7 @@ public class BookingService {
         booking.setHoldId(req.getHoldId());
         booking.setStatus(STATUS_PENDING);
         booking.setCreatedAt(LocalDateTime.now());
-        booking.setExpiresAt(LocalDateTime.now().plusMinutes(5));
+        booking.setExpiresAt(LocalDateTime.now().plusMinutes(10));
         booking.setTotalAmount(totalAmount);
 
         // 8) Gán USER
@@ -166,8 +168,7 @@ public class BookingService {
     // ===== TASK 3: BOOKING DETAIL =====
     @Transactional(readOnly = true)
     public BookingDetailDTO getBookingDetail(String bookingCode) {
-
-        if (isBlank(bookingCode)) {
+        if (bookingCode == null || bookingCode.trim().isEmpty()) {
             throw badRequest("bookingCode is required");
         }
 
@@ -176,15 +177,16 @@ public class BookingService {
 
         Showtime st = booking.getShowtime();
         var movie = st.getMovie();
-        var room = st.getRoom();
+        var room  = st.getRoom();
 
-        // ghế từ booking_items (tồn tại cả khi chưa PAID)
+        // ✅ ghế lấy từ booking_items (tồn tại cả khi chưa PAID)
         List<BookingItem> items = bookingItemRepository.findByBooking_BookingId(booking.getBookingId());
 
         List<BookingDetailDTO.SeatDTO> seatDtos = items.stream()
                 .map(it -> new BookingDetailDTO.SeatDTO(
                         it.getSeat().getSeatId(),
-                        it.getSeat().getSeatCode()))
+                        it.getSeat().getSeatCode()
+                ))
                 .toList();
 
         String pmCode = null;
@@ -193,8 +195,6 @@ public class BookingService {
             pmCode = booking.getPaymentMethod().getCode();
             pmName = booking.getPaymentMethod().getName();
         }
-
-        Integer total = booking.getTotalAmount();
 
         return new BookingDetailDTO(
                 booking.getBookingCode(),
@@ -216,10 +216,11 @@ public class BookingService {
                 pmCode,
                 pmName,
 
-                total,
+                booking.getTotalAmount(), // ✅ đúng field của Booking
                 seatDtos
         );
     }
+
 
     // ===== TASK 4: SET PAYMENT METHOD (chỉ cho PENDING) =====
     @Transactional

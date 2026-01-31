@@ -7,89 +7,123 @@
 
 <section>
 
-  <!-- Breadcrumb full-width -->
-  <div th:replace="~{fragments/breadcrumb :: breadcrumb(${bcItems}, ${bcCurrent})}"></div>
-
   <section class="cb-container cb-content" style="padding-top:18px;">
     <input type="hidden" id="showtimeId" th:value="${showtimeId}"/>
 
-    <!-- Header info -->
-    <div class="cb-card" style="padding:14px; margin-bottom:14px;">
-      <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap;">
-        <img id="moviePoster" src="/image/trangchu/no-poster.png" alt="poster"
-             style="width:72px;height:100px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,.15);"
-             onerror="this.onerror=null; this.src='/image/trangchu/no-poster.png';">
+    <!-- LAYOUT: Left seat map | Right summary -->
+    <div style="display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap;">
 
-        <div style="flex:1; min-width:260px;">
-          <div id="movieTitle" style="font-size:18px;font-weight:800;">Đang tải...</div>
-          <div class="cb-muted" id="showtimeMeta">...</div>
-          <div class="cb-muted" id="roomMeta">...</div>
+      <!-- LEFT: seat map -->
+      <div style="flex:1; min-width:640px;">
+        <!-- Legend -->
+        <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin-bottom:10px;">
+          <div class="cb-legend"><span class="cb-seat cb-seat--available"></span> Trống</div>
+          <div class="cb-legend"><span class="cb-seat cb-seat--selected"></span> Đang chọn</div>
+          <div class="cb-legend"><span class="cb-seat cb-seat--held"></span> Đang giữ</div>
+          <div class="cb-legend"><span class="cb-seat cb-seat--sold"></span> Đã bán</div>
         </div>
 
-        <div style="display:flex; flex-direction:column; gap:8px; min-width:220px;">
-          <div class="cb-muted">Ghế đã chọn: <b id="selectedText">0</b></div>
-          <button id="btnHold" class="cb-btn cb-btn--red" type="button" disabled>Giữ ghế 5 phút</button>
-          <div class="cb-muted">Còn lại: <b id="countdown">--:--</b></div>
-          <div class="cb-muted" id="msg" style="min-height:18px;"></div>
+        <!-- Screen -->
+        <div class="cb-screen">MÀN HÌNH</div>
+
+        <!-- Seat grid -->
+        <div id="seatGrid" class="cb-seat-grid"></div>
+      </div>
+
+      <!-- RIGHT: summary (giống Beta) -->
+      <div style="width:360px; flex:0 0 360px; position:sticky; top:12px;">
+        <div class="cb-card" style="padding:14px;">
+          <div style="display:flex; gap:12px; align-items:center;">
+            <img id="moviePoster" src="/image/trangchu/no-poster.png" alt="poster"
+                 style="width:74px;height:104px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,.15);"
+                 onerror="this.onerror=null; this.src='/image/trangchu/no-poster.png';">
+            <div style="flex:1; min-width:0;">
+              <div id="movieTitle" style="font-size:16px;font-weight:800;line-height:1.2;">Đang tải...</div>
+              <div class="cb-muted" id="showtimeMeta" style="margin-top:6px;">...</div>
+              <div class="cb-muted" id="roomMeta">...</div>
+            </div>
+          </div>
+
+          <hr style="border-color:rgba(255,255,255,.08); margin:12px 0;">
+
+          <div style="display:flex; justify-content:space-between; gap:10px; align-items:center;">
+            <div class="cb-muted">Ghế đã chọn:</div>
+            <b id="selectedCount">0</b>
+          </div>
+
+          <!-- chips -->
+          <div id="selectedChips" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;"></div>
+
+          <div style="display:flex; justify-content:space-between; gap:10px; align-items:center; margin-top:10px;">
+            <div class="cb-muted">Giá ghế:</div>
+            <b id="unitPriceText">--</b>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; gap:10px; align-items:center; margin-top:6px;">
+            <div class="cb-muted">Tổng tiền:</div>
+            <b id="totalPriceText">--</b>
+          </div>
+
+          <div id="msg" class="cb-muted" style="min-height:18px; margin-top:6px;"></div>
+
+          <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;">
+            <button id="btnHold" class="cb-btn cb-btn--red" type="button" disabled style="flex:1;">
+              Chọn ghế
+            </button>
+            <button id="btnCheckout" class="cb-btn" type="button" disabled style="flex:1;">
+              Thanh toán
+            </button>
+          </div>
+
+          <div class="cb-muted" style="margin-top:10px; font-size:12px; opacity:.85;">
+            * Bạn cần <b>Chọn ghế</b> trước khi <b>Thanh toán</b>.
+          </div>
         </div>
       </div>
     </div>
-
-    <!-- Legend -->
-    <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin-bottom:10px;">
-      <div class="cb-legend"><span class="cb-seat cb-seat--available"></span> Trống</div>
-      <div class="cb-legend"><span class="cb-seat cb-seat--selected"></span> Đang chọn</div>
-      <div class="cb-legend"><span class="cb-seat cb-seat--held"></span> Đang giữ</div>
-      <div class="cb-legend"><span class="cb-seat cb-seat--sold"></span> Đã bán</div>
-    </div>
-
-    <!-- Screen -->
-    <div class="cb-screen">MÀN HÌNH</div>
-
-    <!-- Seat grid -->
-    <div id="seatGrid" class="cb-seat-grid"></div>
   </section>
 
   <script>
     (() => {
-        // const token = localStorage.getItem("token");
-        // if (!token) {
-        // setMsg(`Bạn cần <a href="/login?back=${encodeURIComponent(location.pathname + location.search)}"
-        //     style="color:#fff;text-decoration:underline">đăng nhập</a> để giữ ghế`, true);
-        // }
-        const token = localStorage.getItem("token");
-        if(!token){
+      const token = localStorage.getItem("token");
+      if(!token){
         const back = encodeURIComponent(location.pathname + location.search);
         window.location.href = "/login?back=" + back;
         return;
-        }
+      }
 
       const showtimeId = document.getElementById("showtimeId").value;
+
+      const seatGrid = document.getElementById("seatGrid");
+      const btnHold = document.getElementById("btnHold");
+      const btnCheckout = document.getElementById("btnCheckout");
+      const countdownEl = document.getElementById("countdown");
+      const msg = document.getElementById("msg");
 
       const moviePoster = document.getElementById("moviePoster");
       const movieTitle  = document.getElementById("movieTitle");
       const showtimeMeta = document.getElementById("showtimeMeta");
       const roomMeta = document.getElementById("roomMeta");
 
-      const seatGrid = document.getElementById("seatGrid");
-      const selectedText = document.getElementById("selectedText");
-      const btnHold = document.getElementById("btnHold");
-      const countdownEl = document.getElementById("countdown");
-      const msg = document.getElementById("msg");
+      const selectedCount = document.getElementById("selectedCount");
+      const selectedChips = document.getElementById("selectedChips");
+      const unitPriceText = document.getElementById("unitPriceText");
+      const totalPriceText = document.getElementById("totalPriceText");
 
       const bcCurrentEl = document.querySelector(".cb-bc-current");
-      const bcLinks = document.querySelectorAll(".cb-bc-link"); // [0]=Phim, [1]=Chi tiết phim (tạm)
+      const bcLinks = document.querySelectorAll(".cb-bc-link");
 
-      let seats = [];                 // SeatStatusDTO[]
+      let seats = [];
       let selectedSeatIds = new Set();
       let holdTimer = null;
+      let currentHoldId = null;
 
-      function esc(s){ return String(s ?? "").replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m])); }
+      let unitPrice = 0; // lấy từ showtime detail
 
       function setMsg(html, isError=false){
-        msg.innerHTML = html || "";     
+        msg.innerHTML = html || "";
         msg.style.color = isError ? "#ff8a80" : "";
-    }
+      }
 
       function statusOf(seat){
         return String(seat.status || "").toUpperCase();
@@ -107,6 +141,55 @@
         return String.fromCharCode("A".charCodeAt(0) + rowIndex);
       }
 
+      function cell(text, cls){
+        const d = document.createElement("div");
+        d.className = cls;
+        d.textContent = text;
+        return d;
+      }
+
+      function getSelectedSeats(){
+        // map seatId -> seat obj
+        const map = new Map(seats.map(s => [s.seatId, s]));
+        return Array.from(selectedSeatIds)
+          .map(id => map.get(id))
+          .filter(Boolean)
+          .sort((a,b) => String(a.seatCode).localeCompare(String(b.seatCode)));
+      }
+
+      function formatMoney(v){
+        try { return (Number(v)||0).toLocaleString("vi-VN") + " đ"; }
+        catch { return (Number(v)||0) + " đ"; }
+      }
+
+      function updateSummary(){
+        const list = getSelectedSeats();
+        selectedCount.textContent = String(list.length);
+
+        // chips
+        selectedChips.innerHTML = "";
+        if(list.length === 0){
+          selectedChips.innerHTML = `<span class="cb-muted">Chưa chọn ghế</span>`;
+        }else{
+          list.forEach(s => {
+            const chip = document.createElement("span");
+            chip.textContent = s.seatCode;
+            chip.style.cssText = `
+              padding:6px 10px;border-radius:999px;
+              background:rgba(255,255,255,.08);
+              border:1px solid rgba(255,255,255,.12);
+              font-size:12px;font-weight:700;
+            `;
+            selectedChips.appendChild(chip);
+          });
+        }
+
+        unitPriceText.textContent = unitPrice ? formatMoney(unitPrice) : "--";
+        totalPriceText.textContent = unitPrice ? formatMoney(unitPrice * list.length) : "--";
+
+        btnHold.disabled = list.length === 0;
+      }
+
       function renderGrid(){
         seatGrid.innerHTML = "";
         setMsg("");
@@ -119,24 +202,21 @@
         const maxRow = Math.max(...seats.map(s => s.rowIndex ?? 0));
         const maxCol = Math.max(...seats.map(s => s.colIndex ?? 0));
 
-        // map by row/col
         const map = new Map();
         seats.forEach(s => map.set(`${s.rowIndex}-${s.colIndex}`, s));
 
-        // grid include row labels
         const wrapper = document.createElement("div");
         wrapper.className = "cb-seat-grid-inner";
-        wrapper.style.setProperty("--cols", (maxCol + 2)); // +1 row label + cols
+        wrapper.style.setProperty("--cols", (maxCol + 2));
 
-        // header row
-        wrapper.appendChild(cell("", "cb-seat-hdr")); // empty corner
+        wrapper.appendChild(cell("", "cb-seat-hdr"));
         for (let c=0;c<=maxCol;c++){
           wrapper.appendChild(cell(String(c+1), "cb-seat-hdr"));
         }
 
-        // rows
         for (let r=0;r<=maxRow;r++){
           wrapper.appendChild(cell(rowLetter(r), "cb-seat-hdr"));
+
           for (let c=0;c<=maxCol;c++){
             const seat = map.get(`${r}-${c}`);
             if (!seat){
@@ -155,12 +235,12 @@
 
             btn.addEventListener("click", () => {
               if (btn.disabled) return;
+
               if (selectedSeatIds.has(seat.seatId)) selectedSeatIds.delete(seat.seatId);
               else selectedSeatIds.add(seat.seatId);
 
-              selectedText.textContent = String(selectedSeatIds.size);
-              btnHold.disabled = selectedSeatIds.size === 0;
-              renderGrid(); // re-render to update classes
+              renderGrid();
+              updateSummary();
             });
 
             wrapper.appendChild(btn);
@@ -170,38 +250,51 @@
         seatGrid.appendChild(wrapper);
       }
 
-      function cell(text, cls){
-        const d = document.createElement("div");
-        d.className = cls;
-        d.textContent = text;
-        return d;
-      }
-
       async function loadShowtimeDetail(){
         const res = await fetch(`/api/showtimes/${showtimeId}`);
         if(!res.ok) throw new Error("Load showtime detail failed: " + res.status);
         const st = await res.json();
 
-        // DTO của bạn: movieId, title, posterUrl, roomName, screenType, startTime, endTime
         movieTitle.textContent = st.title ?? "";
         moviePoster.src = (st.posterUrl && st.posterUrl.trim()) ? st.posterUrl : "/image/trangchu/no-poster.png";
 
         const start = st.startTime ? new Date(st.startTime) : null;
         const end = st.endTime ? new Date(st.endTime) : null;
-
         const fmt = (d) => d ? d.toLocaleString("vi-VN") : "";
+
         showtimeMeta.textContent = `Suất chiếu: ${fmt(start)}${end ? " - " + fmt(end) : ""}`;
         roomMeta.textContent = `Phòng: ${st.roomName ?? ""} • Màn: ${st.screenType ?? ""}`;
 
-        // update breadcrumb current title
-        if (bcCurrentEl) bcCurrentEl.textContent = `${(st.title || "PHIM").toUpperCase()} › CHỌN GHẾ`;
+        // lấy giá ghế
+        function pickMoneyNumber(...vals){
+          for (const v of vals){
+            if (v === null || v === undefined) continue;
 
-        // update breadcrumb "Chi tiết phim" link nếu có
+            if (typeof v === "number" && !Number.isNaN(v) && v > 0) return v;
+
+            if (typeof v === "string"){
+              // lấy số từ chuỗi (vd "70.000 đ" -> 70000)
+              const n = Number(v.replace(/[^\d]/g, ""));
+              if (!Number.isNaN(n) && n > 0) return n;
+            }
+          }
+          return 0;
+        }
+
+        // lấy giá ghế: support nhiều kiểu response
+        unitPrice = pickMoneyNumber(
+          st.basePrice, st.base_price,
+          st.price, st.ticketPrice, st.ticket_price,
+          st?.showtime?.basePrice, st?.showtime?.base_price,
+          st?.showtime?.price
+        );
+
+        if (bcCurrentEl) bcCurrentEl.textContent = `${(st.title || "PHIM").toUpperCase()} › CHỌN GHẾ`;
         if (bcLinks && bcLinks.length >= 2 && st.movieId){
           bcLinks[1].href = `/movies/${st.movieId}`;
         }
 
-        return st;
+        updateSummary();
       }
 
       async function loadSeatMap(){
@@ -209,12 +302,10 @@
         if(!res.ok) throw new Error("Load seat map failed: " + res.status);
         seats = await res.json();
 
-        // clear selection when reload
-        selectedSeatIds.clear();
-        selectedText.textContent = "0";
-        btnHold.disabled = true;
-
+        // khi reload seat map thì không xoá lựa chọn (UX tốt hơn),
+        // nhưng nếu ghế bị sold/held thì sẽ tự disable => người dùng bấm lại.
         renderGrid();
+        updateSummary();
       }
 
       function startCountdown(expiresAt){
@@ -233,69 +324,111 @@
             clearInterval(holdTimer);
             holdTimer = null;
             countdownEl.textContent = "00:00";
+            currentHoldId = null;
+            btnCheckout.disabled = true;
             setMsg("Hết thời gian giữ ghế. Đang tải lại...", false);
             loadSeatMap().catch(()=>{});
           }
         }, 500);
       }
 
-    async function holdSeats(){
-        if (selectedSeatIds.size === 0) return;
+      async function holdSeats(){
+        const list = getSelectedSeats();
+        if (list.length === 0) return;
 
         setMsg("Đang giữ ghế...", false);
 
-        const token = localStorage.getItem("token"); //  JWT đã lưu khi login
+        const res = await fetch(`/api/holds`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+          },
+          body: JSON.stringify({
+            showtimeId: Number(showtimeId),
+            seatIds: list.map(s => s.seatId)
+          })
+        });
 
+        if (res.status === 401 || res.status === 403){
+          const back = encodeURIComponent(location.pathname + location.search);
+          window.location.href = "/login?back=" + back;
+          return;
+        }
+
+        if(!res.ok){
+          const t = await res.text();
+          throw new Error(t || ("Hold failed: " + res.status));
+        }
+
+        const data = await res.json();
+        currentHoldId = data.holdId || data.holdCode || data.id || null;
+
+        if (data.expiresAt) startCountdown(data.expiresAt);
+
+        setMsg("Giữ ghế thành công!", false);
+
+        // bật nút tiếp tục khi đã có holdId
+        btnCheckout.disabled = !currentHoldId;
+
+        // reload seat map để chuyển HELD
+        await loadSeatMap();
+      }
+
+      async function createBookingFromHold(){
+        if(!currentHoldId){
+          setMsg("Bạn cần giữ ghế trước khi tiếp tục.", true);
+          return;
+        }
+
+        setMsg("Đang tạo booking...", false);
+
+        const res = await fetch("/api/bookings", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+          },
+          body: JSON.stringify({ holdId: currentHoldId })
+        });
+
+        if (res.status === 401 || res.status === 403){
+          const back = encodeURIComponent(location.pathname + location.search);
+          window.location.href = "/login?back=" + back;
+          return;
+        }
+
+        if(!res.ok){
+          const t = await res.text();
+          throw new Error(t || ("Tạo booking thất bại: " + res.status));
+        }
+
+        const data = await res.json();
+        const bookingCode = data.bookingCode || data.code;
+        if(!bookingCode) throw new Error("Không nhận được bookingCode từ server");
+
+        window.location.href = `/checkout/${encodeURIComponent(bookingCode)}`;
+      }
+
+      btnHold.addEventListener("click", () => {
+        holdSeats().catch(e => setMsg(e.message || String(e), true));
+      });
+
+      btnCheckout.addEventListener("click", () => {
+        createBookingFromHold().catch(e => setMsg(e.message || String(e), true));
+      });
+
+      // INIT
+      (async () => {
         try{
-            const res = await fetch(`/api/holds`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                ...(token ? { "Authorization": "Bearer " + token } : {})
-            },
-            body: JSON.stringify({
-                showtimeId: Number(showtimeId),
-                seatIds: Array.from(selectedSeatIds)
-            })
-            });
-
-            // chưa login / token hết hạn
-            if (res.status === 401 || res.status === 403){
-            setMsg(
-                `Bạn cần <a href="/login?back=${encodeURIComponent(location.pathname + location.search)}"
-                    style="color:#fff;text-decoration:underline">đăng nhập</a> để giữ ghế`,
-                true
-            );
-
-            return;
-            }
-
-            if(!res.ok){
-            const t = await res.text();
-            throw new Error(t || ("Hold failed: " + res.status));
-            }
-
-            const data = await res.json();
-            setMsg("Giữ ghế thành công!", false);
-
-            if (data.expiresAt) startCountdown(data.expiresAt);
-
-            await loadSeatMap(); // reload ghế → chuyển sang HELD
-
-        } catch(e){
-            setMsg(String(e.message || e), true);
+          await loadShowtimeDetail();
+          await loadSeatMap();
+          btnCheckout.disabled = true; // chỉ bật sau khi hold thành công
+        }catch(e){
+          setMsg(e.message || String(e), true);
         }
-        }
-
-
-      btnHold.addEventListener("click", holdSeats);
-
-      // init
-      loadShowtimeDetail()
-        .then(loadSeatMap)
-        .catch(e => setMsg(e.message || String(e), true));
+      })();
     })();
   </script>
-
 </section>
 </html>

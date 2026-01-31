@@ -30,7 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Service
 public class RedisSeatHoldService {
     // TTL giữ ghế trong Redis (5 phút)
-    public static final Duration HOLD_TTL = Duration.ofMinutes(5);
+    public static final Duration HOLD_TTL = Duration.ofMinutes(10);
     
     private static final String HOLD_KEY_PREFIX = "hold:";
     private static final String SEAT_LOCK_PREFIX = "seat_lock:";

@@ -49,7 +49,7 @@ public class MovieService {
         m.setPosterUrl(req.getPosterUrl().trim());
         m.setRuntime(req.getRuntime());
         m.setStatus(normalizeStatus(req.getStatus()));
-
+         m.setTrailerUrl(req.getTrailerUrl());
         m = movieRepository.save(m);
         return toDTO(m);
     }
@@ -64,7 +64,7 @@ public class MovieService {
         m.setPosterUrl(req.getPosterUrl().trim());
         m.setRuntime(req.getRuntime());
         m.setStatus(normalizeStatus(req.getStatus()));
-
+        m.setTrailerUrl(req.getTrailerUrl());
         m = movieRepository.save(m);
         return toDTO(m);
     }
@@ -109,6 +109,7 @@ public class MovieService {
         dto.setMovieId(movie.getMovieId());
         dto.setTitle(movie.getTitle());
         dto.setPosterUrl(movie.getPosterUrl());
+        dto.setTrailerUrl(movie.getTrailerUrl());
         dto.setRuntime(movie.getRuntime());
         dto.setStatus(movie.getStatus());
         return dto;

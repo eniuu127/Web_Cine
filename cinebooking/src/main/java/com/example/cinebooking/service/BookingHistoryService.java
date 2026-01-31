@@ -1,80 +1,68 @@
 package com.example.cinebooking.service;
 
 import java.util.List;
-import java.util.stream.Collectors;
-
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.cinebooking.DTO.Booking.BookingHistoryItemDTO;
 import com.example.cinebooking.DTO.Booking.BookingHistoryResponse;
 import com.example.cinebooking.domain.entity.Booking;
-import com.example.cinebooking.domain.entity.Ticket;
+import com.example.cinebooking.domain.entity.Movie;
+import com.example.cinebooking.domain.entity.Room;
+import com.example.cinebooking.domain.entity.Showtime;
 import com.example.cinebooking.repository.BookingRepository;
-import com.example.cinebooking.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class BookingHistoryService {
 
-    private final BookingRepository bookingRepo;
-    private final UserRepository userRepo;
+    private final BookingRepository bookingRepository;
 
-    public BookingHistoryService(BookingRepository bookingRepo, UserRepository userRepo) {
-        this.bookingRepo = bookingRepo;
-        this.userRepo = userRepo;
-    }
+    public BookingHistoryResponse getHistoryByUser(Long userId) {
 
-    public BookingHistoryResponse getHistoryByUserId(Long userId) {
-
-        // check user tồn tại để trả lỗi rõ ràng (không bắt buộc nhưng chuyên nghiệp)
-        if (!userRepo.existsById(userId)) {
-            throw new IllegalArgumentException("User not found");
-        }
-
-        List<Booking> bookings = bookingRepo.findByUser_UserIdOrderByCreatedAtDesc(userId);
+        List<Booking> bookings =
+            bookingRepository.findByUser_UserIdOrderByCreatedAtDesc(userId);
 
         List<BookingHistoryItemDTO> items = bookings.stream()
-                .map(this::toItemDTO)
-                .collect(Collectors.toList());
+            .map(this::mapToItem)
+            .toList();
 
-        BookingHistoryResponse res = new BookingHistoryResponse();
-        res.setUserId(userId);
-        res.setTotalBookings(items.size());
-        res.setBookings(items);
-        return res;
+        BookingHistoryResponse response = new BookingHistoryResponse();
+        response.setUserId(userId);
+        response.setTotalBookings(items.size());
+        response.setBookings(items);
+
+        return response;
     }
 
-    private BookingHistoryItemDTO toItemDTO(Booking b) {
+    private BookingHistoryItemDTO mapToItem(Booking booking) {
         BookingHistoryItemDTO dto = new BookingHistoryItemDTO();
 
-        dto.setBookingCode(b.getBookingCode());
-        dto.setBookingStatus(b.getStatus());
-        dto.setTotalAmount(b.getTotalAmount());
-        dto.setCreatedAt(b.getCreatedAt());
+        dto.setBookingCode(booking.getBookingCode());
+        dto.setBookingStatus(booking.getStatus());
+        dto.setTotalAmount(booking.getTotalAmount());
+        dto.setCreatedAt(booking.getCreatedAt());
 
-        // showtime info
-        if (b.getShowtime() != null) {
-            dto.setShowtimeId(b.getShowtime().getShowtimeId());
-            dto.setStartTime(b.getShowtime().getStartTime());
+        Showtime st = booking.getShowtime();
+        dto.setShowtimeId(st.getShowtimeId());
+        dto.setStartTime(st.getStartTime());
 
-            // movie
-            if (b.getShowtime().getMovie() != null) {
-                dto.setMovieId(b.getShowtime().getMovie().getMovieId());
-                dto.setMovieTitle(b.getShowtime().getMovie().getTitle());
-            }
+        Movie movie = st.getMovie();
+        dto.setMovieId(movie.getMovieId());
+        dto.setMovieTitle(movie.getTitle());
 
-            // room
-            if (b.getShowtime().getRoom() != null) {
-                dto.setRoomId(b.getShowtime().getRoom().getRoomId());
-                dto.setRoomName(b.getShowtime().getRoom().getRoomName());
-            }
-        }
+        Room room = st.getRoom();
+        dto.setRoomId(room.getRoomId());
+        dto.setRoomName(room.getRoomName());
 
-        // seat codes từ Ticket
-        List<String> seatCodes = b.getTickets().stream()
-                .map(Ticket::getSeat)
-                .filter(seat -> seat != null)
-                .map(seat -> seat.getSeatCode())
-                .collect(Collectors.toList());
+        List<String> seatCodes = booking.getTickets().stream()
+            .map(t -> t.getSeat().getSeatCode())
+            .distinct()
+            .sorted()
+            .toList();
 
         dto.setSeatCodes(seatCodes);
 

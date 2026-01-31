@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/base :: layout(~{::title}, ~{::section})}">
+<head>
+  <title>Vé của tôi</title>
+</head>
+
+<section class="cb-container cb-content" style="padding-top:20px;">
+  
+  <input type="hidden" id="bookingCode" th:value="${bookingCode}"/>
+
+  <div class="cb-card" style="max-width:980px;margin:auto;padding:18px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;">
+      <div>
+        <h2 style="margin:0 0 6px;"> Vé của tôi</h2>
+        <div class="cb-muted">Mã booking: <b id="bCode">---</b></div>
+        <div class="cb-muted">Trạng thái: <b id="bStatus">---</b></div>
+      </div>
+    </div>
+
+    <hr style="border-color:rgba(255,255,255,.08);margin:16px 0;">
+
+    <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">
+      <img id="poster" alt="poster"
+           style="width:110px;height:150px;object-fit:cover;border-radius:12px;border:1px solid rgba(255,255,255,.15);"
+           src="/image/trangchu/no-poster.png">
+
+      <div style="flex:1;min-width:260px;">
+        <h3 id="movieTitle" style="margin:0 0 6px;">---</h3>
+        <div id="showtimeText" class="cb-muted">---</div>
+        <div id="roomText" class="cb-muted">---</div>
+      </div>
+
+      <div class="cb-card" style="padding:14px;min-width:260px;">
+        <div style="display:flex;justify-content:space-between;gap:10px;">
+          <div class="cb-muted">Số ghế</div>
+          <b id="seatCount">0</b>
+        </div>
+        <div id="seatChips" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;"></div>
+
+        <hr style="border-color:rgba(255,255,255,.08);margin:14px 0;">
+
+        <div style="display:flex;justify-content:space-between;gap:10px;">
+          <div class="cb-muted">Tổng tiền</div>
+          <b id="totalText">---</b>
+        </div>
+        <div style="display:flex;justify-content:space-between;gap:10px;margin-top:6px;">
+          <div class="cb-muted">Payment method</div>
+          <b id="methodText">---</b>
+        </div>
+      </div>
+    </div>
+
+    <div id="errBox" class="cb-muted" style="margin-top:14px;color:#ff8a80;display:none;"></div>
+
+    <div class="cb-container" style="max-width:980px;margin: 16px auto 0;">
+      <a href="/my-bookings" class="cb-backlink">← Quay lại </a>
+    </div>
+  </div>
+
+  <script>
+    const BOOKING_CODE = document.getElementById("bookingCode").value;
+
+    function getToken(){ return localStorage.getItem("token"); }
+    function showErr(msg){
+      const box = document.getElementById("errBox");
+      box.style.display = "block";
+      box.textContent = msg || "Lỗi không xác định";
+    }
+    function fmtMoney(v){
+      if (v == null) return "--";
+      return Number(v).toLocaleString("vi-VN") + " đ";
+    }
+    function fmtDT(s){
+      return s ? new Date(s).toLocaleString("vi-VN") : "--";
+    }
+
+    async function fetchBooking(){
+      const res = await fetch("/api/bookings/" + BOOKING_CODE, {
+        headers: {
+          "Authorization": "Bearer " + getToken()
+        }
+      });
+      if(!res.ok){
+        const t = await res.text().catch(()=> "");
+        throw new Error("Không lấy được booking. (" + res.status + ") " + t);
+      }
+      return res.json();
+    }
+
+    function renderSeatChips(seats){
+      const wrap = document.getElementById("seatChips");
+      wrap.innerHTML = "";
+      (seats || []).forEach(s => {
+        const chip = document.createElement("span");
+        chip.className = "cb-chip";
+        chip.textContent = s.seatCode;
+        wrap.appendChild(chip);
+      });
+      document.getElementById("seatCount").textContent = (seats || []).length;
+    }
+
+    async function init(){
+      const b = await fetchBooking();
+
+      document.getElementById("bCode").textContent = b.bookingCode || BOOKING_CODE;
+      document.getElementById("bStatus").textContent = b.status || "--";
+
+      // Nếu chưa PAID thì báo và cho quay lại checkout
+      if(!b.status || (b.status !== "PAID" && b.status !== "SOLD")){
+        showErr("Booking chưa thanh toán hoặc đã bị huỷ. Trạng thái: " + (b.status || "N/A"));
+      }
+
+      document.getElementById("movieTitle").textContent = b.movieTitle || "--";
+      document.getElementById("poster").src = b.posterUrl || "/image/trangchu/no-poster.png";
+      document.getElementById("showtimeText").textContent =
+        "Suất chiếu: " + fmtDT(b.startTime) + " - " + fmtDT(b.endTime);
+      document.getElementById("roomText").textContent = "Phòng: " + (b.roomName || "--");
+
+      document.getElementById("totalText").textContent = fmtMoney(b.total);
+      document.getElementById("methodText").textContent = b.paymentMethodName || "--";
+
+      renderSeatChips(b.seats || []);
+    }
+
+    init().catch(e => showErr(e.message));
+  </script>
+</section>
+</html>

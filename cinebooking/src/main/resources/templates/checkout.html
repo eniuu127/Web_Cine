@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/base :: layout(~{::title}, ~{::section})}">
+<head>
+  <title>Thanh toán</title>
+</head>
+
+<section>
+  <section class="cb-container cb-content" style="padding-top:18px;">
+    <input type="hidden" id="bookingCodeHidden" th:value="${bookingCode}"/>
+
+    <div style="display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap;">
+
+      <!-- LEFT: payment info -->
+      <div style="flex:1; min-width:640px;">
+        <div class="cb-card" style="padding:14px;">
+
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+            <div style="font-size:18px; font-weight:900; letter-spacing:.5px;">
+              THÔNG TIN THANH TOÁN
+            </div>
+            <span id="statusPill" class="cb-badge">PENDING</span>
+          </div>
+
+          <div class="cb-muted" style="margin-top:6px;">
+            Mã booking: <b id="bookingCodeText">--</b>
+          </div>
+
+          <hr style="border-color:rgba(255,255,255,.08); margin:12px 0;">
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+            <div>
+              <div class="cb-muted" style="font-size:12px;">Họ tên</div>
+              <b id="meName">--</b>
+            </div>
+            <div>
+              <div class="cb-muted" style="font-size:12px;">Email</div>
+              <b id="meEmail">--</b>
+            </div>
+          </div>
+
+          <hr style="border-color:rgba(255,255,255,.08); margin:12px 0;">
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+            <div>
+              <div class="cb-muted" style="font-size:12px; margin-bottom:6px;">Phương thức thanh toán</div>
+              <select id="methodSelect" style="width:100%;">
+                <option value="">-- Chọn phương thức --</option>
+              </select>
+              <div class="cb-muted" style="margin-top:8px; font-size:12px; opacity:.85;">
+                * Bạn cần chọn method trước khi xác nhận thanh toán.
+              </div>
+            </div>
+
+            <div>
+              <div class="cb-muted" style="font-size:12px;">Hạn giữ</div>
+              <b id="countdown">--:--</b>
+              <div class="cb-muted" style="margin-top:8px; font-size:12px; opacity:.85;">
+                * Tự huỷ khi hết thời gian.
+              </div>
+            </div>
+          </div>
+
+          <div id="errBox" class="cb-muted" style="min-height:18px; margin-top:10px; color:#ff8a80;"></div>
+
+          <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; justify-content:flex-end;">
+            <button class="cb-btn" id="btnBack" type="button">Quay lại chọn ghế</button>
+            <button class="cb-btn cb-btn--red" id="btnConfirm" type="button" disabled>Xác nhận thanh toán</button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- RIGHT: summary -->
+      <div style="width:360px; flex:0 0 360px; position:sticky; top:12px;">
+        <div class="cb-card" style="padding:14px;">
+
+          <div style="display:flex; gap:12px; align-items:center;">
+            <img id="poster" src="/image/trangchu/no-poster.png" alt="poster"
+                 style="width:74px;height:104px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,15);"
+                 onerror="this.onerror=null; this.src='/image/trangchu/no-poster.png';">
+            <div style="flex:1; min-width:0;">
+              <div id="movieTitle" style="font-size:16px;font-weight:800;line-height:1.2;">Đang tải...</div>
+              <div class="cb-muted" id="showtimeText" style="margin-top:6px;">Suất chiếu: --</div>
+              <div class="cb-muted" id="roomText">Phòng: --</div>
+            </div>
+          </div>
+
+          <hr style="border-color:rgba(255,255,255,.08); margin:12px 0;">
+
+          <div style="display:flex; justify-content:space-between; gap:10px; align-items:center;">
+            <div class="cb-muted">Ghế đã chọn:</div>
+            <b id="selectedCount">0</b>
+          </div>
+
+          <div id="seatChips" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;"></div>
+
+          <div style="display:flex; justify-content:space-between; gap:10px; align-items:center; margin-top:10px;">
+            <div class="cb-muted">Tổng tiền:</div>
+            <b id="totalText">--</b>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; gap:10px; align-items:center; margin-top:6px;">
+            <div class="cb-muted">Phương thức thanh toán:</div>
+            <b id="methodText">Chưa chọn</b>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <script>
+    // ===== booking code (lấy từ hidden input để không phụ thuộc inline css/js khác) =====
+    const BOOKING_CODE = document.getElementById("bookingCodeHidden")?.value || "UNKNOWN";
+
+    // ===== utils =====
+    function getToken(){ return localStorage.getItem("token"); }
+
+    function showErr(msg){
+      const box = document.getElementById("errBox");
+      box.textContent = String(msg || "Lỗi không xác định");
+    }
+    function clearErr(){
+      const box = document.getElementById("errBox");
+      box.textContent = "";
+    }
+    function fmtMoney(v){
+      try { return (Number(v)||0).toLocaleString("vi-VN") + " đ"; }
+      catch { return "--"; }
+    }
+    function fmtDT(s){
+      if (!s) return "--";
+      const d = new Date(s);
+      return d.toLocaleString("vi-VN");
+    }
+    async function fetchJSON(url, opts = {}){
+      const token = getToken();
+      const res = await fetch(url, {
+        ...opts,
+        headers: {
+          "Content-Type":"application/json",
+          ...(token ? {"Authorization":"Bearer " + token} : {}),
+          ...(opts.headers||{})
+        }
+      });
+
+      if (res.status === 401 || res.status === 403){
+        const back = encodeURIComponent(location.pathname + location.search);
+        window.location.href = "/login?back=" + back; // giống seatmap
+        return;
+      }
+
+      if(!res.ok){
+        let txt=""; try{txt=await res.text()}catch{}
+        throw new Error(res.status + " " + res.statusText + "\n" + txt);
+      }
+      return res.json();
+    }
+
+    // ===== state =====
+    let bookingDetail = null;
+    let timerId = null;
+
+    function setStatusPill(status){
+      const el = document.getElementById("statusPill");
+      const st = String(status || "").toUpperCase();
+      // cb-badge đã có sẵn style trong style.css, chỉ set text
+      el.textContent = st || "PENDING";
+    }
+
+    async function loadMe(){
+      const me = await fetchJSON("/api/auth/me", {method:"GET"});
+      if(!me) return;
+      document.getElementById("meName").textContent = me.fullName || "--";
+      document.getElementById("meEmail").textContent = me.email || "--";
+    }
+
+    async function loadBooking(){
+      bookingDetail = await fetchJSON("/api/bookings/" + encodeURIComponent(BOOKING_CODE), {method:"GET"});
+      if(!bookingDetail) return;
+
+      document.getElementById("bookingCodeText").textContent = bookingDetail.bookingCode || BOOKING_CODE;
+      setStatusPill(bookingDetail.status);
+
+      document.getElementById("movieTitle").textContent = bookingDetail.movieTitle || "--";
+      const poster = document.getElementById("poster");
+      poster.src = (bookingDetail.posterUrl && bookingDetail.posterUrl.trim())
+        ? bookingDetail.posterUrl
+        : "/image/trangchu/no-poster.png";
+
+      document.getElementById("showtimeText").textContent =
+        "Suất chiếu: " + fmtDT(bookingDetail.startTime) + (bookingDetail.endTime ? " - " + fmtDT(bookingDetail.endTime) : "");
+
+      document.getElementById("roomText").textContent =
+        "Phòng: " + (bookingDetail.roomName || "--");
+
+      // seats
+      const chips = document.getElementById("seatChips");
+      chips.innerHTML = "";
+      const seats = bookingDetail.seats || [];
+      document.getElementById("selectedCount").textContent = String(seats.length || 0);
+
+      seats.forEach(s => {
+        const chip = document.createElement("span");
+        chip.className = "cb-chip"; // nếu style.css có cb-chip thì ăn, không có vẫn ok
+        chip.textContent = s.seatCode || "";
+        chip.style.padding = "6px 10px";
+        chip.style.borderRadius = "999px";
+        chip.style.border = "1px solid rgba(255,255,255,.18)";
+        chip.style.display = "inline-block";
+        chips.appendChild(chip);
+      });
+
+      document.getElementById("totalText").textContent = fmtMoney(bookingDetail.total);
+      document.getElementById("methodText").textContent = bookingDetail.paymentMethodName || "Chưa chọn";
+
+      const isPending = String(bookingDetail.status||"").toUpperCase() === "PENDING";
+      document.getElementById("btnConfirm").disabled = !isPending;
+
+      startCountdown(bookingDetail.expiresAt);
+    }
+
+    async function loadMethods(){
+      const list = await fetchJSON("/api/payment-methods", {method:"GET"});
+      if(!list) return;
+
+      const sel = document.getElementById("methodSelect");
+      sel.innerHTML = `<option value="">-- Chọn phương thức --</option>`;
+      (list||[]).forEach(m=>{
+        const opt = document.createElement("option");
+        opt.value = m.code;
+        opt.textContent = m.name || m.code;
+        sel.appendChild(opt);
+      });
+
+      if(bookingDetail && bookingDetail.paymentMethodCode){
+        sel.value = bookingDetail.paymentMethodCode;
+      }
+    }
+
+    async function selectMethod(code){
+      clearErr();
+      if(!code) return;
+
+      await fetchJSON("/api/payments/select-method", {
+        method:"POST",
+        body: JSON.stringify({ bookingCode: BOOKING_CODE, methodCode: code })
+      });
+
+      await loadBooking();
+      document.getElementById("btnConfirm").disabled = false;
+    }
+
+    function startCountdown(expiresAt){
+      if(timerId) clearInterval(timerId);
+
+      const el = document.getElementById("countdown");
+      if(!expiresAt){ el.textContent="--:--"; return; }
+
+      const expireMs = new Date(expiresAt).getTime();
+      function tick(){
+        const diff = Math.max(0, expireMs - Date.now());
+        const mm = String(Math.floor(diff/60000)).padStart(2,"0");
+        const ss = String(Math.floor((diff%60000)/1000)).padStart(2,"0");
+        el.textContent = mm + ":" + ss;
+
+        if(diff<=0){
+          clearInterval(timerId); timerId=null;
+          document.getElementById("btnConfirm").disabled = true;
+          showErr("Hết hạn giữ ghế. Vui lòng chọn ghế lại.");
+        }
+      }
+      tick();
+      timerId = setInterval(tick, 1000);
+    }
+
+    async function confirmPaid(){
+        clearErr();
+
+        const method = document.getElementById("methodSelect").value;
+        if(!method){
+            showErr("Bạn chưa chọn phương thức thanh toán.");
+            return;
+        }
+
+        // 1️ đảm bảo method đã được lưu
+        await selectMethod(method);
+
+        // 2 confirm paid (đúng endpoint bạn đang dùng)
+        await fetchJSON(
+            "/api/bookings/" + encodeURIComponent(BOOKING_CODE) + "/confirm-paid",
+            { method: "POST" }
+        );
+
+        // 3️ REDIRECT SANG TRANG VÉ
+        window.location.href = "/tickets/" + encodeURIComponent(BOOKING_CODE);
+    }
+
+
+    // events
+    document.getElementById("btnBack").addEventListener("click", ()=>{
+      if(bookingDetail && bookingDetail.showtimeId){
+        window.location.href = "/showtimes/" + bookingDetail.showtimeId + "/seats";
+      } else window.history.back();
+    });
+
+    document.getElementById("methodSelect").addEventListener("change", (e)=>{
+      const v = e.target.value;
+      if(v) selectMethod(v).catch(err=>showErr(err.message||err));
+    });
+
+    document.getElementById("btnConfirm").addEventListener("click", ()=>{
+      confirmPaid().catch(err=>showErr(err.message||err));
+    });
+
+    // init (giống seatmap: bắt buộc có token)
+    (async function init(){
+      const token = getToken();
+      if(!token){
+        const back = encodeURIComponent(location.pathname + location.search);
+        window.location.href = "/login?back=" + back;
+        return;
+      }
+
+      try{
+        await loadMe();
+        await loadBooking();
+        await loadMethods();
+      }catch(e){
+        showErr(e.message || e);
+      }
+    })();
+  </script>
+</section>
+</html>

@@ -16,6 +16,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 @EnableMethodSecurity
 public class SecurityConfig {
 
+    // ✅ PHẢI có bean JwtAuthFilter (vì JwtAuthFilter không @Component)
     @Bean
     public JwtAuthFilter jwtAuthFilter() {
         return new JwtAuthFilter();
@@ -40,9 +41,9 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
             // static resources
-            .requestMatchers("/css/**", "/js/**", "/image/**", "/images/**", "/favicon.ico").permitAll()
+            .requestMatchers("/admin/**","/css/**", "/js/**", "/image/**", "/images/**", "/favicon.ico").permitAll()
 
-            // error page (tránh 403 khi forward /error)
+            // error page
             .requestMatchers("/error", "/error/**").permitAll()
 
             // UI pages (public)
@@ -50,14 +51,21 @@ public class SecurityConfig {
                 "/", "/trangchu",
                 "/login",
                 "/movies/**",
-                "/showtimes/**"
+                "/showtimes/**",
+                "/checkout/**",
+                "/tickets/**",
+                "/my-bookings" 
             ).permitAll()
-            
+
             // UI auth page
-            .requestMatchers("/auth", "/auth/**").permitAll()   
-            // PUBLIC API
+            // .requestMatchers("/auth", "/auth/**").permitAll()
+
+            // PUBLIC API/AUTH
+            // PUBLIC 
             .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
-            .requestMatchers("/api/auth/**").permitAll()
+
+            // /api/auth/me phải cần đăng nhập
+            .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()
             .requestMatchers(HttpMethod.GET, "/api/movies/**").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/showtimes/**").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/seats/**").permitAll()
@@ -67,6 +75,8 @@ public class SecurityConfig {
             .requestMatchers("/api/holds/**").hasRole("USER")
             .requestMatchers("/api/bookings/**").hasRole("USER")
             .requestMatchers("/api/payments/**").hasRole("USER")
+            .requestMatchers(HttpMethod.GET, "/my-bookings").hasAnyRole("USER","ADMIN")
+
 
             // STAFF
             .requestMatchers("/api/staff/**").hasAnyRole("STAFF", "ADMIN")
@@ -77,6 +87,7 @@ public class SecurityConfig {
             .anyRequest().authenticated()
         );
 
+        // ✅ dùng bean filter (đừng tạo new filter ở đây)
         http.addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

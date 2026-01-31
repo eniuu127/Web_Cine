@@ -58,4 +58,25 @@ public class PageController {
         return "auth";
     }
 
+    @GetMapping("/checkout/{bookingCode}")
+    public String checkoutPage(@PathVariable String bookingCode, Model model) {
+        model.addAttribute("bookingCode", bookingCode);
+        return "checkout";
+    }
+
+    @GetMapping("/tickets/{bookingCode}")
+    public String ticketSuccessPage(@PathVariable String bookingCode, Model model) {
+        model.addAttribute("bookingCode", bookingCode);
+        return "ticket_success";
+    }
+
+    @GetMapping("/my-bookings")
+    public String myBookingsPage() {
+        return "my_bookings";
+    }
+
+     @GetMapping("/showtimes")
+    public String showtimes() {
+        return "showtimes"; // templates/showtimes.html
+    }
 }

@@ -5,13 +5,9 @@
   <title>Movie Detail</title>
 </head>
 
-<!-- ✅ WRAPPER: để breadcrumb full-width -->
 <section>
 
-  <!-- ✅ Breadcrumb full-width (giống ảnh 1/3) -->
-  <div th:replace="~{fragments/breadcrumb :: breadcrumb(${bcItems}, ${bcCurrent})}"></div>
-
-  <!-- ✅ Content vẫn nằm trong container -->
+  <!-- Content vẫn nằm trong container -->
   <section class="cb-container cb-content" style="padding-top:18px;">
     <input type="hidden" id="movieId" th:value="${movieId}"/>
 
@@ -40,8 +36,8 @@
 
         <div style="margin-top:16px;">
           <h3 style="font-size:18px; margin-bottom:10px;">Suất chiếu</h3>
-          <div id="showtimeList" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
-          <div id="showtimeEmpty" class="cb-muted" style="margin-top:10px;"></div>
+          <div id="showtimeList" style="display:flex; gap:15px; flex-wrap:wrap;"></div>
+          <div id="showtimeEmpty" class="cb-muted" style="margin-top:15px;"></div>
         </div>
       </div>
     </div>
