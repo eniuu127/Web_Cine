@@ -78,16 +78,17 @@ public class RedisSeatHoldService {
 
         String holdId = UUID.randomUUID().toString().replace("-", "");
         String holdKey = HOLD_KEY_PREFIX + holdId;
+        // 0) Lấy danh sách ghế đã SOLD (PAID) 1 lần (đỡ query nhiều lần)
+        Set<Long> soldSeatIds = ticketRepo.findSeatIdsSoldByShowtimeId(showtime.getShowtimeId());
 
         // 1) lock từng ghế bằng NX + TTL
         List<String> acquiredLocks = new ArrayList<>();
         try {
             for (Long seatId : seatIds) {
                   // CHẶN GHẾ ĐÃ SOLD (đã có ticket trong DB)
-                if (ticketRepo.existsByShowtime_ShowtimeIdAndSeat_SeatId(showtime.getShowtimeId(), seatId)) {
-                    throw new IllegalStateException("Seat already SOLD: seatId=" + seatId);
-                }
-
+            if (soldSeatIds.contains(seatId)) {
+                        throw new IllegalStateException("Seat already SOLD: seatId=" + seatId);
+            }
                 // LOCK KEY ĐÚNG PREFIX
                 String lockKey = SEAT_LOCK_PREFIX + showtime.getShowtimeId() + ":" + seatId;
 

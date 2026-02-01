@@ -11,7 +11,7 @@
     }[m]));
   }
 
-  // ===== HERO TRAILER – THÊM THỦ CÔNG =====
+  // ===== HERO TRAILER  =====
   (function heroTrailerSlider() {
     const slides = document.getElementById("slides");
     const dots = document.getElementById("dots");
@@ -20,9 +20,9 @@
     const HERO_TRAILERS = [
       { title: "Tiếng Yêu Này, Anh Dịch Được Không?", trailerUrl: "https://www.youtube.com/embed/XZ3fczVZcH0", movieId: 13 },
       { title: "Khi Cuộc Đời Cho Bạn Quả Quýt", trailerUrl: "https://www.youtube.com/embed/4ECAaQkNAbc", movieId: 12 },
-      { title: "Cung Điện Ma Ám", trailerUrl: "https://www.youtube.com/embed/efgh5678", movieId: 3 },
-      { title: "Ngưu Lang Chức Nữ", trailerUrl: "https://www.youtube.com/embed/ijkl9012", movieId: 4 },
-      { title: "Dear Hongrang", trailerUrl: "https://www.youtube.com/embed/mnop3456", movieId: 5 }
+      { title: "Thiên Đường Máu", trailerUrl: "https://www.youtube.com/embed/46ASchtBIbE", movieId: 2 },
+      { title: "Mưa Đỏ", trailerUrl: "https://www.youtube.com/embed/BD6PoZJdt_M", movieId: 8 },
+      { title: "Quật Mộ Trùng Ma", trailerUrl: "https://www.youtube.com/embed/66K9-l0EkE0", movieId: 11 }
     ];
 
     let idx = 0;
@@ -69,7 +69,7 @@
 
     function start() {
       clearInterval(timer);
-      timer = setInterval(next, 8000);
+      timer = setInterval(next, 15000);
     }
 
     document.addEventListener("click", (e) => {

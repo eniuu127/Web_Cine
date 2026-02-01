@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/base :: layout(~{::title}, ~{::section})}">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Giá vé</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+
+<body class="cb-body cb-page">
+
+<section>
+  <!-- HEADER (dùng lại như trang chủ) -->
+  <!-- <div th:replace="fragments/header :: header"></div> -->
+
+  <main class="cb-container" style="padding: 22px 0 40px;">
+    <div class="cb-card" style="padding:18px;">
+      <h1 style="margin:0 0 6px; font-size:26px; font-weight:900;">Giá vé</h1>
+      <div class="cb-muted">Bảng giá tham khảo theo loại ghế và khung giờ (có thể thay đổi theo rạp).</div>
+    </div>
+
+    <!-- ===== Cards giá vé ===== -->
+    <div class="cb-grid-3" style="margin-top:14px;">
+      <div class="cb-card cb-price-card">
+        <div class="cb-price-badge">STANDARD</div>
+        <div class="cb-price-title">Ghế thường</div>
+        <div class="cb-price">
+          <span class="cb-price-number">70.000</span><span class="cb-price-unit">đ</span>
+        </div>
+        <ul class="cb-price-list">
+          <li>Thứ 2–Thứ 5</li>
+          <li>Áp dụng khung giờ thường</li>
+          <li>Không phụ thu VIP/3D</li>
+        </ul>
+      </div>
+
+      <div class="cb-card cb-price-card cb-price-card--hot">
+        <div class="cb-price-badge">VIP</div>
+        <div class="cb-price-title">Ghế VIP</div>
+        <div class="cb-price">
+          <span class="cb-price-number">100.000</span><span class="cb-price-unit">đ</span>
+        </div>
+        <ul class="cb-price-list">
+          <li>Rộng hơn, vị trí đẹp</li>
+          <li>Phụ thu theo suất chiếu</li>
+          <li>Ưu tiên trải nghiệm</li>
+        </ul>
+      </div>
+
+      <div class="cb-card cb-price-card">
+        <div class="cb-price-badge">3D/IMAX</div>
+        <div class="cb-price-title">Phụ thu màn hình</div>
+        <div class="cb-price">
+          <span class="cb-price-number">+30.000</span><span class="cb-price-unit">đ</span>
+        </div>
+        <ul class="cb-price-list">
+          <li>Áp dụng cho phòng 3D</li>
+          <li>Kính/hiệu ứng tuỳ rạp</li>
+          <li>Cộng vào giá ghế</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ===== Bảng chi tiết ===== -->
+    <div class="cb-card" style="margin-top:14px; padding:16px;">
+      <h2 style="margin:0 0 10px; font-size:18px; font-weight:900;">Bảng giá chi tiết</h2>
+
+      <div style="overflow:auto;">
+        <table class="cb-table" style="width:100%; min-width:760px;">
+          <thead>
+          <tr>
+            <th>Loại ghế</th>
+            <th>Ngày thường</th>
+            <th>Cuối tuần</th>
+            <th>Giờ vàng (18:00–22:00)</th>
+            <th>Ghi chú</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr>
+            <td><b>STANDARD</b></td>
+            <td>70.000đ</td>
+            <td>80.000đ</td>
+            <td>90.000đ</td>
+            <td>Giá cơ bản</td>
+          </tr>
+          <tr>
+            <td><b>VIP</b></td>
+            <td>100.000đ</td>
+            <td>110.000đ</td>
+            <td>120.000đ</td>
+            <td>Phụ thu theo phòng</td>
+          </tr>
+          <tr>
+            <td><b>Couple</b></td>
+            <td>160.000đ</td>
+            <td>180.000đ</td>
+            <td>200.000đ</td>
+            <td>Ghế đôi (tuỳ rạp)</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="cb-muted" style="margin-top:10px;">
+        * Nếu suất chiếu thuộc phòng 3D/IMAX sẽ cộng thêm phụ thu theo loại phòng.
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="cb-card" style="margin-top:14px; padding:16px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+      <div>
+        <div style="font-weight:900;">Bạn đã sẵn sàng đặt vé?</div>
+        <div class="cb-muted">Hãy chọn phim và suất chiếu để xem giá chính xác theo phòng/ghế.</div>
+      </div>
+      <a class="cb-btn cb-btn--red" th:href="@{/trangchu}">Về trang chủ</a>
+    </div>
+  </main>
+
+  <!-- FOOTER (dùng lại như trang chủ) -->
+  <!-- <div th:replace="fragments/footer :: footer"></div> -->
+</section>
+
+</body>
+</html>

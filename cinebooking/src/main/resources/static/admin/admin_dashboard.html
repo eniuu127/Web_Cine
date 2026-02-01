@@ -34,6 +34,7 @@
         <button class="nav-item" data-page="showtimes">Showtimes</button>
         <button class="nav-item" data-page="rooms">Rooms</button>
         <button class="nav-item" data-page="seats">Seats</button>
+        <button class="nav-item" data-page="staff">Staff</button>
       </nav>
 
       <div class="sb-bottom">
@@ -53,8 +54,9 @@
         </div>
       </header>
 
-      <!-- ===== DASHBOARD ===== -->
+      <!-- ================= DASHBOARD ================= -->
       <section class="page" id="page-dashboard">
+
         <div class="grid-3">
           <div class="card">
             <div class="card-label">Movies</div>
@@ -94,11 +96,76 @@
         </div>
 
         <div class="note">
-          * Dashboard hiện thống kê theo dữ liệu Movies/Rooms/Showtimes (vì backend chưa có endpoint doanh thu).
+          * Dashboard hiện thống kê theo dữ liệu Movies/Rooms/Showtimes
         </div>
+
+        <!-- ===== REVENUE DASHBOARD (CHỈ NẰM TRONG DASHBOARD) ===== -->
+        <section class="cb-card" style="margin-top:16px; padding:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap;">
+            <div>
+              <h3 style="margin:0; font-size:18px;">Thống kê doanh thu</h3>
+              <!-- <div class="cb-muted" style="margin-top:6px;">Chỉ tính booking trạng thái <b>PAID</b> theo <b>paidAt</b></div> -->
+            </div>
+
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button id="btnRevReloadAll" class="cb-btn cb-btn--white" type="button">Tải lại</button>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin-top:14px;">
+            <!-- ===== DAILY ===== -->
+            <div class="cb-card" style="padding:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:10px; flex-wrap:wrap;">
+                <div>
+                  <div class="cb-muted">Doanh thu theo ngày</div>
+                  <div id="revDailyTotal" style="font-weight:800; font-size:18px; margin-top:4px;">0 đ</div>
+                  <div id="revDailyOrders" class="cb-muted" style="margin-top:4px;">0 đơn</div>
+                </div>
+
+                <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                  <button id="btnToday" class="cb-btn cb-btn--white" type="button">Hôm nay</button>
+                  <button id="btn7Days" class="cb-btn cb-btn--white" type="button">7 ngày</button>
+
+                  <input id="revFrom" type="date" class="cb-input" style="min-width:150px;">
+                  <input id="revTo" type="date" class="cb-input" style="min-width:150px;">
+                  <button id="btnRevDaily" class="cb-btn cb-btn--red" type="button">Xem</button>
+                </div>
+              </div>
+
+              <div style="margin-top:12px;">
+                <div id="revDailyEmpty" class="cb-muted" style="display:none; margin-bottom:8px;">Không có dữ liệu.</div>
+                <canvas id="chartDaily" height="120"></canvas>
+              </div>
+            </div>
+
+            <!-- ===== MONTHLY ===== -->
+            <div class="cb-card" style="padding:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:10px; flex-wrap:wrap;">
+                <div>
+                  <div class="cb-muted">Doanh thu theo tháng</div>
+                  <div id="revMonthlyTotal" style="font-weight:800; font-size:18px; margin-top:4px;">0 đ</div>
+                  <div id="revMonthlyOrders" class="cb-muted" style="margin-top:4px;">0 đơn</div>
+                </div>
+
+                <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                  <button id="btnThisMonth" class="cb-btn cb-btn--white" type="button">Tháng này</button>
+
+                  <select id="revYear" class="cb-input" style="min-width:120px;"></select>
+                  <button id="btnRevMonthly" class="cb-btn cb-btn--red" type="button">Xem</button>
+                </div>
+              </div>
+
+              <div style="margin-top:12px;">
+                <div id="revMonthlyEmpty" class="cb-muted" style="display:none; margin-bottom:8px;">Không có dữ liệu.</div>
+                <canvas id="chartMonthly" height="120"></canvas>
+              </div>
+            </div>
+          </div>
+        </section>
+
       </section>
 
-      <!-- ===== MOVIES ===== -->
+      <!-- ================= MOVIES ================= -->
       <section class="page hidden" id="page-movies">
         <div class="toolbar">
           <div class="left">
@@ -128,7 +195,7 @@
         </div>
       </section>
 
-      <!-- ===== SHOWTIMES ===== -->
+      <!-- ================= SHOWTIMES ================= -->
       <section class="page hidden" id="page-showtimes">
         <div class="toolbar">
           <div class="left muted">Tạo/sửa suất chiếu (AdminShowtimeRequest)</div>
@@ -156,7 +223,7 @@
         </div>
       </section>
 
-      <!-- ===== ROOMS ===== -->
+      <!-- ================= ROOMS ================= -->
       <section class="page hidden" id="page-rooms">
         <div class="toolbar">
           <div class="left muted">Quản lý phòng chiếu</div>
@@ -182,7 +249,7 @@
         </div>
       </section>
 
-      <!-- ===== SEATS ===== -->
+      <!-- ================= SEATS ================= -->
       <section class="page hidden" id="page-seats">
         <div class="card big">
           <div class="card-head">
@@ -227,12 +294,103 @@
         </div>
       </section>
 
+      <!-- ================= STAFF (PAGE RIÊNG, KHÔNG CÒN THỐNG KÊ) ================= -->
+      <section class="page hidden" id="page-staff">
+
+        <section class="cb-card" id="staffSection" style="padding:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap;">
+            <div>
+              <h3 style="margin:0; font-size:18px;">Quản lý nhân viên (Staff)</h3>
+              <div class="cb-muted" style="margin-top:6px;">CRUD staff (ADMIN)</div>
+            </div>
+
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+              <input id="staffQ" class="cb-input" placeholder="Tìm theo tên/email..." style="min-width:240px;">
+              <button id="btnStaffSearch" class="cb-btn cb-btn--white" type="button">Tìm</button>
+              <button id="btnStaffCreate" class="cb-btn cb-btn--red" type="button">+ Thêm staff</button>
+            </div>
+          </div>
+
+          <div style="margin-top:12px; overflow:auto;">
+            <table class="cb-table" style="width:100%; min-width:840px;">
+              <thead>
+                <tr>
+                  <th style="width:70px;">ID</th>
+                  <th>Họ tên</th>
+                  <th>Email</th>
+                  <th style="width:120px;">Role</th>
+                  <th style="width:120px;">Trạng thái</th>
+                  <th style="width:220px; text-align:right;">Hành động</th>
+                </tr>
+              </thead>
+              <tbody id="staffTbody">
+                <tr><td colspan="6" class="cb-muted">Chưa có dữ liệu.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:12px; flex-wrap:wrap;">
+            <div id="staffMeta" class="cb-muted">—</div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <button id="staffPrev" class="cb-btn cb-btn--white" type="button">←</button>
+              <div class="cb-muted">Trang</div>
+              <span id="staffPage" style="font-weight:800;">1</span>
+              <button id="staffNext" class="cb-btn cb-btn--white" type="button">→</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== STAFF MODAL (Create / Update) ===== -->
+        <div class="cb-modal" id="staffModal" style="display:none;">
+          <div class="cb-modal__backdrop" data-close="1"></div>
+          <div class="cb-modal__panel">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+              <h3 id="staffModalTitle" style="margin:0; font-size:18px;">Thêm staff</h3>
+              <button class="cb-btn cb-btn--white" type="button" data-close="1">Đóng</button>
+            </div>
+
+            <div class="cb-muted" style="margin-top:6px;" id="staffModalHint"></div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:12px;">
+              <div>
+                <div class="cb-muted" style="margin-bottom:6px;">Họ tên</div>
+                <input id="staffFullName" class="cb-input" placeholder="Nguyễn Văn A">
+              </div>
+
+              <div>
+                <div class="cb-muted" style="margin-bottom:6px;">Email</div>
+                <input id="staffEmail" class="cb-input" placeholder="staff@cine.com">
+              </div>
+
+              <div>
+                <div class="cb-muted" style="margin-bottom:6px;">Role</div>
+                <select id="staffRole" class="cb-input">
+                  <option value="STAFF">STAFF</option>
+                  <option value="ADMIN">ADMIN</option>
+                </select>
+              </div>
+
+              <div id="staffPasswordWrap">
+                <div class="cb-muted" style="margin-bottom:6px;">Mật khẩu (chỉ khi tạo mới)</div>
+                <input id="staffPassword" class="cb-input" type="password" placeholder="Tối thiểu 6 ký tự">
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:14px;">
+              <button id="btnStaffSave" class="cb-btn cb-btn--red" type="button">Lưu</button>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
       <!-- Toast -->
       <div class="toast" id="toast"></div>
+
     </main>
   </div>
 
-  <!-- MODAL -->
+  <!-- MODAL (Movies/Rooms/Showtimes etc.) -->
   <div class="modal hidden" id="modal">
     <div class="modal-backdrop" data-close="1"></div>
     <div class="modal-card">
@@ -245,6 +403,7 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="./admin_dashboard.js" defer></script>
 </body>
 </html>

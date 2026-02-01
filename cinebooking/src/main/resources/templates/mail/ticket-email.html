@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body style="font-family:Arial,sans-serif;">
+  <h2>Vé xem phim - Mã đặt chỗ: <span th:text="${ev.bookingCode}"></span></h2>
+  <p>Xin chào <b th:text="${ev.customerName}"></b>,</p>
+
+  <p>
+    Phim: <b th:text="${ev.movieTitle}"></b><br/>
+    Phòng: <b th:text="${ev.roomName}"></b><br/>
+    Suất chiếu: <b th:text="${#temporals.format(ev.startTime, 'dd/MM/yyyy HH:mm')}"></b><br/>
+    Tổng tiền: <b th:text="${ev.totalAmount}"></b>
+  </p>
+
+  <h3>Danh sách vé</h3>
+  <div th:each="t,stat : ${ev.tickets}"
+       style="border:1px solid #ddd; padding:12px; margin:10px 0; border-radius:10px;">
+    <div><b>Mã vé:</b> <span th:text="${t.ticketCode}"></span></div>
+    <div><b>Ghế:</b> <span th:text="${t.seatCode}"></span></div>
+    <div><b>Giá:</b> <span th:text="${t.price}"></span></div>
+
+    <div style="margin-top:10px;">
+      <div><b>QR:</b></div>
+      <!-- QR inline bằng CID: qr_0, qr_1... -->
+      <img th:src="'cid:qr_' + ${stat.index}" style="width:140px; height:140px;"/>
+    </div>
+  </div>
+
+  <p style="color:#666">Vui lòng đưa QR cho nhân viên soát vé.</p>
+</body>
+</html>

@@ -1,8 +1,11 @@
 package com.example.cinebooking.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -10,20 +13,22 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.example.cinebooking.DTO.Booking.BookingDetailDTO;
 import com.example.cinebooking.DTO.Booking.CreateBookingRequest;
 import com.example.cinebooking.DTO.Booking.CreateBookingResponse;
+import com.example.cinebooking.DTO.Event.TicketIssuedEvent;
 import com.example.cinebooking.domain.entity.Booking;
 import com.example.cinebooking.domain.entity.BookingItem;
-import com.example.cinebooking.domain.entity.Movie;
 import com.example.cinebooking.domain.entity.PaymentMethod;
-import com.example.cinebooking.domain.entity.Room;
 import com.example.cinebooking.domain.entity.Seat;
 import com.example.cinebooking.domain.entity.Showtime;
 import com.example.cinebooking.domain.entity.Ticket;
 import com.example.cinebooking.domain.entity.User;
+import com.example.cinebooking.messaging.TicketEventPublisher;
 import com.example.cinebooking.repository.BookingItemRepository;
 import com.example.cinebooking.repository.BookingRepository;
 import com.example.cinebooking.repository.PaymentMethodRepository;
@@ -48,6 +53,7 @@ public class BookingService {
     private final BookingItemRepository bookingItemRepository;
     private final PaymentMethodRepository paymentMethodRepository;
     private final TicketRepository ticketRepository;
+    private final TicketEventPublisher ticketEventPublisher; 
 
     public BookingService(
             BookingRepository bookingRepository,
@@ -57,7 +63,8 @@ public class BookingService {
             RedisSeatHoldService holdService,
             BookingItemRepository bookingItemRepository,
             PaymentMethodRepository paymentMethodRepository,
-            TicketRepository ticketRepository) {
+            TicketRepository ticketRepository,
+            TicketEventPublisher ticketEventPublisher) {
 
         this.bookingRepository = bookingRepository;
         this.showtimeRepository = showtimeRepository;
@@ -67,6 +74,7 @@ public class BookingService {
         this.bookingItemRepository = bookingItemRepository;
         this.paymentMethodRepository = paymentMethodRepository;
         this.ticketRepository = ticketRepository;
+        this.ticketEventPublisher = ticketEventPublisher;
     }
 
     /**
@@ -216,7 +224,7 @@ public class BookingService {
                 pmCode,
                 pmName,
 
-                booking.getTotalAmount(), // ✅ đúng field của Booking
+                booking.getTotalAmount(), //field của Booking
                 seatDtos
         );
     }
@@ -248,7 +256,6 @@ public class BookingService {
     }
 
     /**
-     * TASK 5 (INTERNAL):
      * Hoàn tất đơn sau khi payment SUCCESS:
      * - chống double pay
      * - check hết hạn booking
@@ -257,9 +264,6 @@ public class BookingService {
      * - tạo ticket
      * - update booking -> PAID
      * - release hold
-     *
-     * IMPORTANT: KHÔNG expose method này cho Controller.
-     * Controller confirm-paid phải gọi PaymentService.confirmPaid().
      */
     @Transactional
     void finalizePaidInternal(String bookingCode) {
@@ -303,8 +307,16 @@ public class BookingService {
             throw badRequest("Invalid hold: seatIds empty");
         }
 
-        // 5) chống double sell
-        Set<Long> soldSeatIds = ticketRepository.findSeatIdsSoldByShowtimeId(booking.getShowtime().getShowtimeId());
+        // 5) chống double sell (chỉ coi sold nếu thuộc BOOKING KHÁC)
+        Long showtimeId = booking.getShowtime().getShowtimeId();
+        Long bookingId  = booking.getBookingId();
+
+        Set<Long> soldSeatIds = ticketRepository
+            .findSeatIdsSoldByShowtimeIdExcludeBooking(
+                booking.getShowtime().getShowtimeId(),
+                booking.getBookingId()
+            );
+
         for (Long seatId : hold.getSeatIds()) {
             if (soldSeatIds.contains(seatId)) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Seat already sold: " + seatId);
@@ -322,16 +334,148 @@ public class BookingService {
             ticket.setShowtime(booking.getShowtime());
             ticket.setSeat(seat);
             ticket.setPrice(booking.getShowtime().getBasePrice());
+
+            // ===== NEW =====
+            String ticketCode = generateTicketCode();
+            ticket.setTicketCode(ticketCode);
+            ticket.setQrContent("TICKET:" + ticketCode);
+
             tickets.add(ticket);
+
         }
         ticketRepository.saveAll(tickets);
 
         // 7) update booking -> PAID
         booking.setStatus(STATUS_PAID);
+        booking.setPaidAt(LocalDateTime.now());
         bookingRepository.save(booking);
 
         // 8) release hold
         holdService.releaseHold(holdId);
+
+        // 9) publish event -> Notification service gửi mail + QR
+try {
+    TicketIssuedEvent ev = new TicketIssuedEvent();
+    ev.bookingCode = booking.getBookingCode();
+
+    // email
+    String email = null;
+    if (booking.getGuestMail() != null && !booking.getGuestMail().isBlank()) {
+        email = booking.getGuestMail();
+    } else if (booking.getUser() != null && booking.getUser().getEmail() != null) {
+        email = booking.getUser().getEmail();
+    }
+    ev.toEmail = email;
+
+    ev.customerName = (booking.getUser() != null && booking.getUser().getFullName() != null)
+            ? booking.getUser().getFullName()
+            : "Khách";
+
+    Showtime st = booking.getShowtime();
+    ev.movieTitle = st.getMovie().getTitle();
+    ev.roomName = st.getRoom().getRoomName();
+    ev.startTime = st.getStartTime();
+    ev.totalAmount = booking.getTotalAmount();
+
+    ev.tickets = tickets.stream().map(t -> {
+        TicketIssuedEvent.TicketItem it = new TicketIssuedEvent.TicketItem();
+        it.ticketCode = t.getTicketCode();
+        it.seatCode = t.getSeat().getSeatCode();
+        it.price = t.getPrice();
+        it.qrContent = t.getQrContent();
+        return it;
+    }).toList();
+
+    // 🔥 CHỈ publish sau khi commit
+    TransactionSynchronizationManager.registerSynchronization(
+        new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                ticketEventPublisher.publishTicketIssued(ev);
+            }
+        }
+    );
+
+} catch (Exception ex) {
+    System.out.println("Build ticket.issued event failed: " + ex.getMessage());
+}
+
+
+    }
+
+    // ===== ADMIN: REVENUE (reuse - no DTO) =====
+    public Map<String, Object> revenueDaily(LocalDate from, LocalDate toInclusive) {
+        if (from == null || toInclusive == null) {
+            throw badRequest("from/to is required");
+        }
+        if (toInclusive.isBefore(from)) {
+            throw badRequest("to must be >= from");
+        }
+
+        LocalDateTime fromDt = from.atStartOfDay();
+        LocalDateTime toDt = toInclusive.plusDays(1).atStartOfDay(); // exclusive
+
+        var rows = bookingRepository.revenueDaily(fromDt, toDt);
+
+        Map<String, BookingRepository.RevenueRow> map = new HashMap<>();
+        for (var r : rows) map.put(r.getLabel(), r);
+
+        long totalRevenue = 0;
+        long totalOrders = 0;
+        List<Map<String, Object>> points = new ArrayList<>();
+
+        for (LocalDate d = from; !d.isAfter(toInclusive); d = d.plusDays(1)) {
+            String key = d.toString(); // yyyy-MM-dd
+            var r = map.get(key);
+
+            long revenue = (r == null || r.getRevenue() == null) ? 0 : r.getRevenue();
+            long orders  = (r == null || r.getOrders()  == null) ? 0 : r.getOrders();
+
+            totalRevenue += revenue;
+            totalOrders  += orders;
+
+            points.add(Map.of("label", key, "revenue", revenue, "orders", orders));
+        }
+
+        return Map.of(
+            "totalRevenue", totalRevenue,
+            "totalOrders", totalOrders,
+            "points", points
+        );
+    }
+
+    public Map<String, Object> revenueMonthly(int year) {
+        if (year < 2000 || year > 2100) {
+            throw badRequest("year invalid");
+        }
+
+        var rows = bookingRepository.revenueMonthly(year);
+
+        Map<String, BookingRepository.RevenueRow> map = new HashMap<>();
+        for (var r : rows) map.put(r.getLabel(), r);
+
+        long totalRevenue = 0;
+        long totalOrders = 0;
+        List<Map<String, Object>> points = new ArrayList<>();
+
+        for (int m = 1; m <= 12; m++) {
+            String key = String.format("%04d-%02d", year, m);
+            var r = map.get(key);
+
+            long revenue = (r == null || r.getRevenue() == null) ? 0 : r.getRevenue();
+            long orders  = (r == null || r.getOrders()  == null) ? 0 : r.getOrders();
+
+            totalRevenue += revenue;
+            totalOrders  += orders;
+
+            points.add(Map.of("label", key, "revenue", revenue, "orders", orders));
+        }
+
+        return Map.of(
+            "totalRevenue", totalRevenue,
+            "totalOrders", totalOrders,
+            "points", points
+        );
     }
 
     // ===== utils =====
@@ -354,4 +498,14 @@ public class BookingService {
     private static ResponseStatusException forbidden(String msg) {
         return new ResponseStatusException(HttpStatus.FORBIDDEN, msg);
     }
+
+    private String generateTicketCode() {
+        return "TK"
+            + UUID.randomUUID()
+                .toString()
+                .replace("-", "")
+                .substring(0, 10)
+                .toUpperCase();
+    }
+    
 }

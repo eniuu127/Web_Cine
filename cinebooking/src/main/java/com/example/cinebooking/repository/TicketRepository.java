@@ -14,7 +14,12 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     List<Ticket> findByBooking_BookingId(Long bookingId);
 
     // kiểm tra ghế đã bị đặt trong showtime chưa 
-    boolean existsByShowtime_ShowtimeIdAndSeat_SeatId(Long showtimeId, Long seatId);
+    boolean existsByShowtime_ShowtimeIdAndSeat_SeatIdAndBooking_BookingIdNotAndBooking_Status(
+        Long showtimeId,
+        Long seatId,
+        Long bookingId,
+        String status
+    );
 
     // lấy tất cả ticket theo showtime id (để hiển thị ghế đã bán / đang hold )
     List<Ticket> findByShowtime_ShowtimeId(Long showtimeId);
@@ -28,5 +33,17 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
         and t.booking.status = 'PAID'
     """)
     Set<Long> findSeatIdsSoldByShowtimeId(@Param("showtimeId") Long showtimeId);
+
+    @Query("""
+        select t.seat.seatId
+        from Ticket t
+        where t.showtime.showtimeId = :showtimeId
+        and t.booking.status = 'PAID'
+        and t.booking.bookingId <> :bookingId
+    """)
+    Set<Long> findSeatIdsSoldByShowtimeIdExcludeBooking(
+        @Param("showtimeId") Long showtimeId,
+        @Param("bookingId") Long bookingId
+    );
 
 }

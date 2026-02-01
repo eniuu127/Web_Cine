@@ -41,7 +41,8 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
             // static resources
-            .requestMatchers("/admin/**","/css/**", "/js/**", "/image/**", "/images/**", "/favicon.ico").permitAll()
+            .requestMatchers("/admin/**","/css/**", "/js/**", "/image/**",
+             "/images/**", "/favicon.ico","/static/**").permitAll()
 
             // error page
             .requestMatchers("/error", "/error/**").permitAll()
@@ -54,7 +55,9 @@ public class SecurityConfig {
                 "/showtimes/**",
                 "/checkout/**",
                 "/tickets/**",
-                "/my-bookings" 
+                "/my-bookings",
+                "/prices",
+                "/seatmap/**" 
             ).permitAll()
 
             // UI auth page

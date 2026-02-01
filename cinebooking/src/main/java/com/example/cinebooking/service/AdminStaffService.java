@@ -1,13 +1,19 @@
 package com.example.cinebooking.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.example.cinebooking.DTO.AdminStaff.CreateStaffRequest;
@@ -22,10 +28,12 @@ public class AdminStaffService {
 
     private final UserRepository userRepo;
     private final PasswordEncoder encoder;
+    private final BookingService bookingService;
 
-    public AdminStaffService(UserRepository userRepo, PasswordEncoder encoder) {
+    public AdminStaffService(UserRepository userRepo, PasswordEncoder encoder, BookingService bookingService) {
         this.userRepo = userRepo;
         this.encoder = encoder;
+        this.bookingService = bookingService;
     }
 
     /**
@@ -190,4 +198,21 @@ public class AdminStaffService {
             return null;
         }
     }
+
+    // ===== ADMIN REVENUE (reuse - no new controller) =====
+    // GET /api/admin/staff/revenue/daily?from=2026-02-01&to=2026-02-07
+    @GetMapping("/revenue/daily")
+    public ResponseEntity<Map<String, Object>> revenueDaily(
+            @RequestParam("from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam("to")   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
+    ) {
+        return ResponseEntity.ok(bookingService.revenueDaily(from, to));
+    }
+
+    // GET /api/admin/staff/revenue/monthly?year=2026
+    @GetMapping("/revenue/monthly")
+    public ResponseEntity<Map<String, Object>> revenueMonthly(@RequestParam("year") int year) {
+        return ResponseEntity.ok(bookingService.revenueMonthly(year));
+    }
+
 }

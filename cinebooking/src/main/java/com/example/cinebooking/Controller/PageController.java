@@ -79,4 +79,15 @@ public class PageController {
     public String showtimes() {
         return "showtimes"; // templates/showtimes.html
     }
+
+     @GetMapping("/prices")
+    public String pricingPage() {
+        return "prices"; // templates/prices.html
+    }
+
+    @GetMapping("/seatmap/{showtimeId}")
+    public String seatmapPage(@PathVariable Long showtimeId, Model model) {
+        model.addAttribute("showtimeId", showtimeId);
+        return "seatmap"; // templates/seatmap.html
+    }
 }

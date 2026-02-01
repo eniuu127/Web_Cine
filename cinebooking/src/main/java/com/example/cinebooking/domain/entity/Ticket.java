@@ -30,6 +30,12 @@ public class Ticket {
     @Column(name = "ticket_id")
     private Long ticketId;
 
+    @Column(name = "ticket_code", nullable = false, length = 32)
+    private String ticketCode;
+
+    @Column(name = "qr_content", nullable = false, length = 255)
+    private String qrContent;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "booking_id", nullable=false, foreignKey = @ForeignKey(name="fk_ticket_booking"))
     private Booking booking;

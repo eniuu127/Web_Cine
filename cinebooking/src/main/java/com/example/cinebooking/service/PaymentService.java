@@ -1,10 +1,7 @@
 package com.example.cinebooking.service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,13 +12,9 @@ import com.example.cinebooking.DTO.Payment.SelectPaymentMethodRequest;
 import com.example.cinebooking.domain.entity.Booking;
 import com.example.cinebooking.domain.entity.Payment;
 import com.example.cinebooking.domain.entity.PaymentMethod;
-import com.example.cinebooking.domain.entity.Seat;
-import com.example.cinebooking.domain.entity.Ticket;
 import com.example.cinebooking.repository.BookingRepository;
 import com.example.cinebooking.repository.PaymentMethodRepository;
 import com.example.cinebooking.repository.PaymentRepository;
-import com.example.cinebooking.repository.SeatRepository;
-import com.example.cinebooking.repository.TicketRepository;
 
 @Service
 public class PaymentService {
@@ -38,26 +31,21 @@ public class PaymentService {
     private final PaymentMethodRepository methodRepo;
     private final PaymentRepository paymentRepo;
     private final BookingRepository bookingRepo;
-    private final TicketRepository ticketRepo;
-    private final SeatRepository seatRepo;
     private final RedisSeatHoldService holdService;
 
-    // (OPTIONAL) nếu bạn đã chuyển logic tạo ticket sang BookingService.finalizePaidInternal
-    // thì inject BookingService ở đây và gọi finalizePaidInternal thay cho block saveAll()
-    // private final BookingService bookingService;
+    // ✅ NEW: giao việc tạo ticket + publish event cho BookingService
+    private final BookingService bookingService;
 
     public PaymentService(PaymentMethodRepository methodRepo,
                           PaymentRepository paymentRepo,
                           BookingRepository bookingRepo,
-                          TicketRepository ticketRepo,
-                          SeatRepository seatRepo,
-                          RedisSeatHoldService holdService) {
+                          RedisSeatHoldService holdService,
+                          BookingService bookingService) {
         this.methodRepo = methodRepo;
         this.paymentRepo = paymentRepo;
         this.bookingRepo = bookingRepo;
-        this.ticketRepo = ticketRepo;
-        this.seatRepo = seatRepo;
         this.holdService = holdService;
+        this.bookingService = bookingService;
     }
 
     @Transactional
@@ -91,6 +79,7 @@ public class PaymentService {
         try {
             holdService.getHoldOrThrow(booking.getHoldId());
         } catch (RuntimeException ex) {
+            // giữ nguyên style của bạn (BAD_REQUEST), nếu muốn đúng nghiệp vụ hơn có thể dùng GONE
             throw badRequest("Hold expired or not found");
         }
 
@@ -148,7 +137,7 @@ public class PaymentService {
 
     /**
      * SINGLE SOURCE OF TRUTH:
-     * Confirm payment SUCCESS -> tạo ticket -> booking PAID -> release hold
+     * Confirm payment SUCCESS -> bookingService.finalizePaidInternal (tạo ticket + booking PAID + release hold + publish mail)
      *
      * Idempotent:
      * - Nếu payment SUCCESS hoặc booking PAID => trả response luôn
@@ -168,7 +157,6 @@ public class PaymentService {
         if (BOOKING_PAID.equalsIgnoreCase(booking.getStatus())) {
             Payment p = paymentRepo.findByBooking_BookingId(booking.getBookingId()).orElse(null);
             if (p == null) {
-                // hiếm: booking PAID nhưng payment missing
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Payment missing for PAID booking");
             }
             return toResponse(booking, p);
@@ -188,11 +176,11 @@ public class PaymentService {
             throw badRequest("Booking has no holdId");
         }
 
-        RedisSeatHoldService.HoldPayload hold;
         try {
-            hold = holdService.getHoldOrThrow(booking.getHoldId());
+            holdService.getHoldOrThrow(booking.getHoldId());
         } catch (RuntimeException ex) {
-            throw badRequest("Hold expired or not found");
+            // ✅ đúng nghiệp vụ hơn: hold hết hạn -> 410 GONE
+            throw new ResponseStatusException(HttpStatus.GONE, "Hold expired or not found");
         }
 
         // phải có payment INIT
@@ -201,10 +189,11 @@ public class PaymentService {
 
         // idempotent: nếu payment SUCCESS thì trả luôn
         if (PAYMENT_SUCCESS.equalsIgnoreCase(payment.getStatus())) {
-            // đảm bảo booking cũng PAID (nếu lệch thì sync nhẹ)
+            // đảm bảo booking cũng PAID (nếu lệch thì finalize nhẹ)
             if (!BOOKING_PAID.equalsIgnoreCase(booking.getStatus())) {
-                booking.setStatus(BOOKING_PAID);
-                bookingRepo.save(booking);
+                bookingService.finalizePaidInternal(bookingCode);
+                booking = bookingRepo.findByBookingCode(bookingCode)
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
             }
             return toResponse(booking, payment);
         }
@@ -213,47 +202,30 @@ public class PaymentService {
             throw badRequest("Payment is not in INIT status");
         }
 
-        // ===== TẠO TICKET (SAVE ALL) =====
-        // (DB unique (showtime_id, seat_id) vẫn là bảo vệ cuối)
-        List<Ticket> tickets = new ArrayList<>();
-
-        for (Long seatId : hold.getSeatIds()) {
-            Seat seat = seatRepo.findById(seatId)
-                    .orElseThrow(() -> badRequest("Seat not found: " + seatId));
-
-            Ticket ticket = new Ticket();
-            ticket.setBooking(booking);
-            ticket.setShowtime(booking.getShowtime());
-            ticket.setSeat(seat);
-            ticket.setPrice(booking.getShowtime().getBasePrice());
-            tickets.add(ticket);
-        }
-
-        try {
-            ticketRepo.saveAll(tickets);
-        } catch (DataIntegrityViolationException ex) {
-            // có ghế đã sold -> fail payment + cancel booking
-            payment.setStatus(PAYMENT_FAILED);
-            paymentRepo.save(payment);
-
-            booking.setStatus(BOOKING_CANCELLED);
-            bookingRepo.save(booking);
-
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Seat already booked");
-        }
-
-        // ===== UPDATE PAYMENT + BOOKING =====
+        // ✅ 1) Mark payment SUCCESS trước (mô phỏng payment gateway ok)
         payment.setStatus(PAYMENT_SUCCESS);
         payment.setPaidAt(LocalDateTime.now());
-        payment = paymentRepo.save(payment);
+        paymentRepo.save(payment);
 
-        booking.setStatus(BOOKING_PAID);
-        bookingRepo.save(booking);
+        // ✅ 2) Giao phần tạo ticket + chống double sell + release hold + publish mail cho BookingService
+        try {
+            bookingService.finalizePaidInternal(bookingCode);
+        } catch (ResponseStatusException ex) {
+            // nếu conflict / gone... thì payment fail cho đúng
+            payment.setStatus(PAYMENT_FAILED);
+            paymentRepo.save(payment);
+            throw ex;
+        } catch (RuntimeException ex) {
+            payment.setStatus(PAYMENT_FAILED);
+            paymentRepo.save(payment);
+            throw ex;
+        }
 
-        // ===== RELEASE HOLD =====
-        holdService.releaseHold(booking.getHoldId());
+        // reload booking để trả response chuẩn
+        Booking updatedBooking = bookingRepo.findByBookingCode(bookingCode)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
 
-        return toResponse(booking, payment);
+        return toResponse(updatedBooking, payment);
     }
 
     // ===== helpers =====

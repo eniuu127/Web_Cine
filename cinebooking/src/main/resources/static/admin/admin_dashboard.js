@@ -36,13 +36,14 @@ function toast(msg) {
 }
 
 // ===== UI navigation =====
-const pages = ["dashboard", "movies", "showtimes", "rooms", "seats"];
+const pages = ["dashboard", "movies", "showtimes", "rooms", "seats", "staff"];
 const pageTitleMap = {
   dashboard: ["Dashboard", "Thống kê tổng quan hệ thống"],
   movies: ["Movies", "CRUD phim (/api/admin/movies)"],
   showtimes: ["Showtimes", "CRUD suất chiếu (/api/admin/showtimes)"],
   rooms: ["Rooms", "CRUD phòng (/api/admin/rooms)"],
   seats: ["Seats", "Generate/Clear seat map theo room"],
+  staff: ["Staff", "CRUD nhân viên (/api/admin/staff)"],
 };
 
 function showPage(key) {
@@ -61,6 +62,8 @@ function showPage(key) {
   if (key === "showtimes") loadShowtimes();
   if (key === "rooms") loadRooms();
   if (key === "seats") loadSeatRoomsAndGrid();
+  if (key === "staff") window.__loadStaff?.();
+
 }
 
 document.querySelectorAll(".nav-item").forEach(btn => {
@@ -154,6 +157,7 @@ function renderMovieTable(list) {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${m.movieId ?? ""}</td>
+
       <td>
         <div style="font-weight:900">${escapeHtml(m.title || "")}</div>
         <div class="muted" style="margin-top:4px; word-break:break-all">
@@ -161,8 +165,23 @@ function renderMovieTable(list) {
           Trailer: ${escapeHtml(m.trailerUrl || "")}
         </div>
       </td>
+
+      <!-- Trailer column (đúng header) -->
+      <td>
+        ${
+          m.trailerUrl
+            ? `<a class="link" href="${escapeHtml(m.trailerUrl)}" target="_blank" rel="noopener">Open</a>`
+            : `<span class="muted">—</span>`
+        }
+      </td>
+
+      <!-- Runtime column -->
       <td>${m.runtime ?? ""}</td>
+
+      <!-- Status column -->
       <td><span class="badge">${escapeHtml(m.status || "")}</span></td>
+
+      <!-- Actions column -->
       <td>
         <div class="actions">
           <button class="btn-sm primary" data-act="edit" data-id="${m.movieId}">Edit</button>
@@ -171,6 +190,7 @@ function renderMovieTable(list) {
         </div>
       </td>
     `;
+
     tbody.appendChild(tr);
   });
 
@@ -696,3 +716,492 @@ function toLocalInputValue(v) {
   const s = String(v);
   return s.length >= 16 ? s.slice(0,16) : s;
 }
+
+// ================== REVENUE (ADD-ON, keep old code) ==================
+(function initRevenueUI() {
+  // Endpoints theo backend bạn đang dùng
+  const API_DAILY = "/api/admin/staff/revenue/daily";
+  const API_MONTHLY = "/api/admin/staff/revenue/monthly";
+
+  // Elements (đã có trong admin_dashboard.html)
+  const elFrom = document.getElementById("revFrom");
+  const elTo = document.getElementById("revTo");
+  const elYear = document.getElementById("revYear");
+
+  const elDailyTotal = document.getElementById("revDailyTotal");
+  const elDailyOrders = document.getElementById("revDailyOrders");
+  const elMonthlyTotal = document.getElementById("revMonthlyTotal");
+  const elMonthlyOrders = document.getElementById("revMonthlyOrders");
+
+  const elDailyEmpty = document.getElementById("revDailyEmpty");
+  const elMonthlyEmpty = document.getElementById("revMonthlyEmpty");
+
+  const btnDaily = document.getElementById("btnRevDaily");
+  const btnMonthly = document.getElementById("btnRevMonthly");
+  const btnReloadAll = document.getElementById("btnRevReloadAll");
+
+  const btnToday = document.getElementById("btnToday");
+  const btn7Days = document.getElementById("btn7Days");
+  const btnThisMonth = document.getElementById("btnThisMonth");
+
+  // Nếu trang chưa có section revenue thì thôi (an toàn)
+  if (!elFrom || !elTo || !elYear || !btnDaily || !btnMonthly) return;
+
+  // Helpers
+  const fmtMoney = (n) => (Number(n || 0)).toLocaleString("vi-VN") + " đ";
+  const toISODate = (d) => {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  async function fetchRevenueJson(url) {
+    const res = await adminFetch(url, { method: "GET" });
+    if (!res) return null;
+
+    // Hiện lỗi cũ rõ ràng (400 do sai format ngày, 500 do query, v.v.)
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      toast(`Revenue API lỗi ${res.status}`);
+      console.error("Revenue API error:", res.status, text);
+      return null;
+    }
+    return await safeJson(res);
+  }
+
+  // Chart.js instances
+  let chartDaily = null;
+  let chartMonthly = null;
+
+  function destroyChart(ch) {
+    if (ch) try { ch.destroy(); } catch (e) {}
+  }
+
+  function renderDailyChart(labels, values) {
+    const canvas = document.getElementById("chartDaily");
+    if (!canvas || !window.Chart) return;
+
+    destroyChart(chartDaily);
+    chartDaily = new Chart(canvas, {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [{ label: "Doanh thu", data: values }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: {
+            ticks: {
+              color: "rgba(255,255,255,.85)",
+              font: { size: 12, weight: "600" }
+            },
+            grid: { color: "rgba(255,255,255,.06)" }
+          },
+          y: {
+            ticks: {
+              color: "rgba(255,255,255,.85)",
+              callback: (v) => Number(v).toLocaleString("vi-VN")
+            },
+            grid: { color: "rgba(255,255,255,.06)" }
+          }
+        }
+      }
+    });
+  }
+
+  function renderMonthlyChart(labels, values) {
+    const canvas = document.getElementById("chartMonthly");
+    if (!canvas || !window.Chart) return;
+
+    destroyChart(chartMonthly);
+    chartMonthly = new Chart(canvas, {
+      type: "line",
+      data: {
+        labels,
+        datasets: [{ label: "Doanh thu", data: values }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: {
+            ticks: {
+              color: "rgba(255, 255, 255, 0.85)",
+              font: { size: 12, weight: "600" }
+            },
+            grid: { color: "rgba(255,255,255,.06)" }
+          },
+          y: {
+            ticks: {
+              color: "rgba(255,255,255,.85)",
+              callback: (v) => Number(v).toLocaleString("vi-VN")
+            },
+            grid: { color: "rgba(255,255,255,.06)" }
+          }
+        }
+      }
+    });
+  }
+
+  async function loadDaily() {
+    const from = elFrom.value; // type=date => yyyy-MM-dd
+    const to = elTo.value;
+
+    if (!from || !to) { toast("Chọn ngày"); return; }
+    if (from > to) { toast("from phải <= to"); return; }
+
+    const data = await fetchRevenueJson(`${API_DAILY}?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+    if (!data) return;
+
+    elDailyTotal.textContent = fmtMoney(data.totalRevenue);
+    elDailyOrders.textContent = `${data.totalOrders} đơn`;
+
+    const points = Array.isArray(data.points) ? data.points : [];
+    const labels = points.map(p => p.label);
+    const values = points.map(p => Number(p.revenue || 0));
+
+    const hasAny = values.some(v => v > 0);
+    if (elDailyEmpty) elDailyEmpty.style.display = hasAny ? "none" : "block";
+
+    renderDailyChart(labels, values);
+  }
+
+  async function loadMonthly() {
+    const year = Number(elYear.value || 0);
+    if (!year) { toast("Chọn năm"); return; }
+
+    const data = await fetchRevenueJson(`${API_MONTHLY}?year=${encodeURIComponent(year)}`);
+    if (!data) return;
+
+    elMonthlyTotal.textContent = fmtMoney(data.totalRevenue);
+    elMonthlyOrders.textContent = `${data.totalOrders} đơn`;
+
+    const points = Array.isArray(data.points) ? data.points : [];
+    const labels = points.map(p => p.label);
+    const values = points.map(p => Number(p.revenue || 0));
+
+    const hasAny = values.some(v => v > 0);
+    if (elMonthlyEmpty) elMonthlyEmpty.style.display = hasAny ? "none" : "block";
+
+    renderMonthlyChart(labels, values);
+  }
+
+  // Fill year select: current ± 2
+  (function initYearSelect() {
+    const now = new Date();
+    const y = now.getFullYear();
+    elYear.innerHTML = "";
+    for (let i = y - 2; i <= y + 1; i++) {
+      const opt = document.createElement("option");
+      opt.value = String(i);
+      opt.textContent = String(i);
+      if (i === y) opt.selected = true;
+      elYear.appendChild(opt);
+    }
+  })();
+
+  // Default date range: last 7 days
+  (function initDefaultRange() {
+    const now = new Date();
+    const to = new Date(now);
+    const from = new Date(now);
+    from.setDate(from.getDate() - 6);
+    elFrom.value = toISODate(from);
+    elTo.value = toISODate(to);
+  })();
+
+  // Quick buttons
+  btnToday?.addEventListener("click", () => {
+    const d = new Date();
+    const iso = toISODate(d);
+    elFrom.value = iso;
+    elTo.value = iso;
+    loadDaily();
+  });
+
+  btn7Days?.addEventListener("click", () => {
+    const d = new Date();
+    const to = new Date(d);
+    const from = new Date(d);
+    from.setDate(from.getDate() - 6);
+    elFrom.value = toISODate(from);
+    elTo.value = toISODate(to);
+    loadDaily();
+  });
+
+  btnThisMonth?.addEventListener("click", () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = d.getMonth(); // 0-based
+    const first = new Date(year, month, 1);
+    const last = new Date(year, month + 1, 0);
+    elFrom.value = toISODate(first);
+    elTo.value = toISODate(last);
+    elYear.value = String(year);
+    Promise.all([loadDaily(), loadMonthly()]);
+  });
+
+  // Manual buttons
+  btnDaily.addEventListener("click", loadDaily);
+  btnMonthly.addEventListener("click", loadMonthly);
+  btnReloadAll?.addEventListener("click", () => Promise.all([loadDaily(), loadMonthly()]));
+
+  // Auto-load (để vừa vào dashboard là có chart)
+  // Chỉ chạy khi Chart.js đã load
+  const boot = () => Promise.all([loadDaily(), loadMonthly()]).catch(console.error);
+  if (window.Chart) boot();
+  else window.addEventListener("load", boot);
+})();
+
+// ================== STAFF CRUD (ADD-ON, keep old code) ==================
+(function initStaffCRUD() {
+  const API_BASE = "/api/admin/staff";
+
+  const elQ = document.getElementById("staffQ");
+  const btnSearch = document.getElementById("btnStaffSearch");
+  const btnCreate = document.getElementById("btnStaffCreate");
+  const tbody = document.getElementById("staffTbody");
+
+  const meta = document.getElementById("staffMeta");
+  const btnPrev = document.getElementById("staffPrev");
+  const btnNext = document.getElementById("staffNext");
+  const elPage = document.getElementById("staffPage");
+
+  const modal = document.getElementById("staffModal");
+  const modalTitle = document.getElementById("staffModalTitle");
+  const modalHint = document.getElementById("staffModalHint");
+
+  const inFullName = document.getElementById("staffFullName");
+  const inEmail = document.getElementById("staffEmail");
+  const inRole = document.getElementById("staffRole");
+  const wrapPw = document.getElementById("staffPasswordWrap");
+  const inPw = document.getElementById("staffPassword");
+  const btnSave = document.getElementById("btnStaffSave");
+
+  if (!tbody || !btnCreate) return;
+
+  let state = { page: 0, size: 10, q: "" };
+  let editingId = null;
+
+  function openModal(mode, row) {
+    editingId = (mode === "edit") ? row.userId : null;
+
+    modalTitle.textContent = mode === "edit" ? `Sửa staff #${row.userId}` : "Thêm staff";
+    modalHint.textContent = mode === "edit"
+      ? "Chỉnh sửa thông tin staff. Mật khẩu không đổi ở chế độ sửa."
+      : "Tạo staff mới (bắt buộc email + password).";
+
+    inFullName.value = row?.fullName || "";
+    inEmail.value = row?.email || "";
+    inRole.value = row?.role || "STAFF";
+    inPw.value = "";
+
+    // create: show password, edit: hide password
+    wrapPw.style.display = (mode === "edit") ? "none" : "block";
+
+    modal.style.display = "block";
+  }
+
+  function closeModal() {
+    modal.style.display = "none";
+    editingId = null;
+  }
+
+  modal?.addEventListener("click", (e) => {
+    const t = e.target;
+    if (t && t.getAttribute && t.getAttribute("data-close") === "1") closeModal();
+  });
+
+  async function api(url, opt) {
+    const res = await adminFetch(url, opt);
+    if (!res) return null;
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      toast(`Staff API lỗi ${res.status}`);
+      console.error("Staff API error:", res.status, txt);
+      return null;
+    }
+    return await safeJson(res);
+  }
+
+  function esc(s) {
+    return String(s ?? "").replace(/[&<>"']/g, m => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[m]));
+  }
+
+  function renderRows(pageData) {
+    const items = pageData?.content || [];
+    if (!items.length) {
+      tbody.innerHTML = `<tr><td colspan="6" class="cb-muted">Không có staff.</td></tr>`;
+      meta.textContent = "0 kết quả";
+      elPage.textContent = String((state.page || 0) + 1);
+      return;
+    }
+
+    tbody.innerHTML = items.map(u => {
+      const statusBadge = u.isActive
+        ? `<span class="cb-badge cb-badge--on">ACTIVE</span>`
+        : `<span class="cb-badge cb-badge--off">DISABLED</span>`;
+
+      const role = esc(u.role || "");
+      const name = esc(u.fullName || "");
+      const email = esc(u.email || "");
+
+      return `
+        <tr>
+          <td>${u.userId}</td>
+          <td>${name}</td>
+          <td>${email}</td>
+          <td>${role}</td>
+          <td>${statusBadge}</td>
+          <td style="text-align:right;">
+            <div class="cb-actions">
+              <button class="cb-btn cb-btn--white" data-act="edit" data-id="${u.userId}">Sửa</button>
+              <button class="cb-btn cb-btn--white" data-act="toggle" data-id="${u.userId}" data-active="${u.isActive}">
+                ${u.isActive ? "Disable" : "Enable"}
+              </button>
+              <button class="cb-btn cb-btn--red" data-act="del" data-id="${u.userId}">Xoá</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    meta.textContent = `Tổng: ${pageData.totalElements} | Trang ${pageData.number + 1}/${pageData.totalPages}`;
+    elPage.textContent = String(pageData.number + 1);
+
+    // enable/disable paging buttons
+    btnPrev.disabled = pageData.first;
+    btnNext.disabled = pageData.last;
+  }
+
+  async function load() {
+    const q = (state.q || "").trim();
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    params.set("page", String(state.page));
+    params.set("size", String(state.size));
+
+    const data = await api(`${API_BASE}?${params.toString()}`, { method: "GET" });
+    if (!data) return;
+    renderRows(data);
+  }
+
+  async function createStaff() {
+    const fullName = inFullName.value.trim();
+    const email = inEmail.value.trim();
+    const role = inRole.value;
+    const password = inPw.value;
+
+    if (!email) { toast("Thiếu email"); return; }
+    if (!password || password.length < 6) { toast("Mật khẩu >= 6 ký tự"); return; }
+
+    const payload = { fullName, email, role, password };
+    const data = await api(API_BASE, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!data) return;
+    toast("Tạo staff thành công");
+    closeModal();
+    await load();
+  }
+
+  async function updateStaff(id) {
+    const fullName = inFullName.value.trim();
+    const email = inEmail.value.trim();
+    const role = inRole.value;
+
+    if (!email) { toast("Thiếu email"); return; }
+
+    const payload = { fullName, email, role };
+    const data = await api(`${API_BASE}/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!data) return;
+    toast("Cập nhật staff thành công");
+    closeModal();
+    await load();
+  }
+
+  async function toggleStatus(id, currentActive) {
+    const next = !currentActive;
+    const payload = { isActive: next }; // SetStaffStatusRequest
+    const data = await api(`${API_BASE}/${id}/status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!data) return;
+    toast(next ? "Đã Enable" : "Đã Disable");
+    await load();
+  }
+
+  async function deleteStaff(id) {
+    if (!confirm(`Xoá staff #${id}?`)) return;
+    const res = await adminFetch(`${API_BASE}/${id}`, { method: "DELETE" });
+    if (!res) return;
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      toast(`Xoá thất bại (${res.status})`);
+      console.error("delete staff error:", res.status, txt);
+      return;
+    }
+    toast("Đã xoá staff");
+    await load();
+  }
+
+  // events
+  btnCreate.addEventListener("click", () => openModal("create", null));
+  btnSearch?.addEventListener("click", () => { state.q = elQ.value; state.page = 0; load(); });
+  elQ?.addEventListener("keydown", (e) => { if (e.key === "Enter") { state.q = elQ.value; state.page = 0; load(); } });
+
+  btnPrev?.addEventListener("click", () => { state.page = Math.max(0, state.page - 1); load(); });
+  btnNext?.addEventListener("click", () => { state.page = state.page + 1; load(); });
+
+  btnSave.addEventListener("click", () => {
+    if (editingId) updateStaff(editingId);
+    else createStaff();
+  });
+
+  tbody.addEventListener("click", async (e) => {
+    const btn = e.target?.closest?.("button[data-act]");
+    if (!btn) return;
+    const act = btn.getAttribute("data-act");
+    const id = Number(btn.getAttribute("data-id"));
+    if (!id) return;
+
+    if (act === "edit") {
+      // lấy row data từ dom: gọi lại list để có data (đơn giản)
+      // nhanh nhất: fetch page hiện tại rồi tìm id
+      const q = (state.q || "").trim();
+      const params = new URLSearchParams();
+      if (q) params.set("q", q);
+      params.set("page", String(state.page));
+      params.set("size", String(state.size));
+      const pageData = await api(`${API_BASE}?${params.toString()}`, { method: "GET" });
+      const row = pageData?.content?.find(x => x.userId === id);
+      if (!row) { toast("Không tìm thấy staff"); return; }
+      openModal("edit", row);
+    }
+
+    if (act === "toggle") {
+      const currentActive = (btn.getAttribute("data-active") === "true");
+      toggleStatus(id, currentActive);
+    }
+
+    if (act === "del") {
+      deleteStaff(id);
+    }
+  });
+
+  // init
+  load();
+})();
