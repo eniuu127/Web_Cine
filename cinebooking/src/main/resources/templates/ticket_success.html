@@ -6,7 +6,7 @@
 </head>
 
 <section class="cb-container cb-content" style="padding-top:20px;">
-  
+
   <input type="hidden" id="bookingCode" th:value="${bookingCode}"/>
 
   <div class="cb-card" style="max-width:980px;margin:auto;padding:18px;">
@@ -51,6 +51,27 @@
       </div>
     </div>
 
+    <!-- ✅ NEW: danh sách vé theo ghế -->
+    <hr style="border-color:rgba(255,255,255,.08);margin:16px 0;">
+
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+      <div>
+        <h3 style="margin:0 0 6px;">Danh sách vé (ticketCode)</h3>
+        <div class="cb-muted" style="max-width:820px;">
+          Mỗi ghế sẽ có 1 <b>ticketCode</b> để nhân viên check-in. QR content thường = ticketCode.
+        </div>
+      </div>
+      <button id="btnReloadTickets" class="cb-btn cb-btn--ghost" type="button"
+              style="padding:10px 14px;border-radius:12px;">
+        Tải lại vé
+      </button>
+    </div>
+
+    <div id="ticketEmpty" class="cb-muted" style="margin-top:10px;"></div>
+    <div id="ticketList"
+         style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;">
+    </div>
+
     <div id="errBox" class="cb-muted" style="margin-top:14px;color:#ff8a80;display:none;"></div>
 
     <div class="cb-container" style="max-width:980px;margin: 16px auto 0;">
@@ -61,31 +82,53 @@
   <script>
     const BOOKING_CODE = document.getElementById("bookingCode").value;
 
-    function getToken(){ return localStorage.getItem("token"); }
+    function getToken(){
+      // bạn đang dùng localStorage "token", nhưng mình fallback thêm sessionStorage cho chắc
+      return localStorage.getItem("token") || sessionStorage.getItem("token");
+    }
+
     function showErr(msg){
       const box = document.getElementById("errBox");
       box.style.display = "block";
       box.textContent = msg || "Lỗi không xác định";
     }
+
+    function hideErr(){
+      const box = document.getElementById("errBox");
+      box.style.display = "none";
+      box.textContent = "";
+    }
+
     function fmtMoney(v){
       if (v == null) return "--";
       return Number(v).toLocaleString("vi-VN") + " đ";
     }
+
     function fmtDT(s){
       return s ? new Date(s).toLocaleString("vi-VN") : "--";
     }
 
     async function fetchBooking(){
-      const res = await fetch("/api/bookings/" + BOOKING_CODE, {
-        headers: {
-          "Authorization": "Bearer " + getToken()
-        }
+      const res = await fetch("/api/bookings/" + encodeURIComponent(BOOKING_CODE), {
+        headers: { "Authorization": "Bearer " + getToken() }
       });
       if(!res.ok){
         const t = await res.text().catch(()=> "");
         throw new Error("Không lấy được booking. (" + res.status + ") " + t);
       }
       return res.json();
+    }
+
+    async function fetchTicketsByBooking(){
+      const res = await fetch("/api/tickets/by-booking/" + encodeURIComponent(BOOKING_CODE), {
+        headers: { "Authorization": "Bearer " + getToken() }
+      });
+      const data = await res.json().catch(()=> []);
+      if(!res.ok){
+        const msg = (data && (data.message || data.error)) ? (data.message || data.error) : "";
+        throw new Error("Không lấy được ticket list. (" + res.status + ") " + msg);
+      }
+      return Array.isArray(data) ? data : [];
     }
 
     function renderSeatChips(seats){
@@ -100,13 +143,101 @@
       document.getElementById("seatCount").textContent = (seats || []).length;
     }
 
+    function esc(s){
+      return String(s ?? "").replace(/[&<>"']/g, m => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+      }[m]));
+    }
+
+    function copyText(text){
+      if(!text) return;
+      navigator.clipboard?.writeText(text).catch(()=>{});
+    }
+
+    function renderTickets(list){
+      const wrap = document.getElementById("ticketList");
+      const empty = document.getElementById("ticketEmpty");
+
+      wrap.innerHTML = "";
+
+      if(!list || list.length === 0){
+        empty.textContent = "Chưa có ticketCode/QR cho booking này. (Có thể chưa ISSUE ticket sau khi PAID)";
+        return;
+      }
+
+      empty.textContent = "";
+
+      list.forEach((t, idx) => {
+        const ticketCode = t.ticketCode || "";
+        const qrContent  = t.qrContent  || ticketCode;
+        const seatCode   = t.seatCode   || "--";
+        const status     = t.status     || "ISSUED";
+        const price      = (t.price != null) ? fmtMoney(t.price) : "--";
+
+        const card = document.createElement("div");
+        card.className = "cb-card";
+        card.style.padding = "14px";
+
+        card.innerHTML = `
+          <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
+            <div>
+              <div class="cb-muted">Ghế</div>
+              <div style="font-weight:900;font-size:18px;margin-top:2px;">${esc(seatCode)}</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="cb-muted">Trạng thái</div>
+              <div style="font-weight:900;margin-top:2px;">${esc(status)}</div>
+            </div>
+          </div>
+
+          <hr style="border-color:rgba(255,255,255,.08);margin:12px 0;">
+
+          <div class="cb-muted">Mã vé (ticketCode)</div>
+          <div style="display:flex;gap:10px;align-items:center;margin-top:6px;">
+            <div style="font-weight:900;letter-spacing:.5px;flex:1;word-break:break-all;">
+              ${esc(ticketCode || "--")}
+            </div>
+            <button type="button" class="cb-btn cb-btn--ghost"
+                    style="padding:8px 10px;border-radius:10px;"
+                    data-copy="${esc(ticketCode)}">
+              Copy
+            </button>
+          </div>
+
+          <div class="cb-muted" style="margin-top:10px;">QR content</div>
+          <input value="${esc(qrContent)}" readonly
+                 style="width:100%;height:40px;margin-top:6px;border-radius:12px;
+                        border:1px solid rgba(255,255,255,.12);
+                        background:rgba(255,255,255,.06);
+                        color:#eaf0ff;padding:0 12px;">
+
+          <div style="display:flex;justify-content:space-between;gap:10px;margin-top:10px;">
+            <div class="cb-muted">Giá</div>
+            <b>${esc(price)}</b>
+          </div>
+
+          <div class="cb-muted" style="margin-top:10px;font-size:12px;">
+            Staff check-in: nhập/scan <b>${esc(ticketCode || "--")}</b> tại trang Staff → Check vé
+          </div>
+        `;
+
+        wrap.appendChild(card);
+      });
+
+      // bind copy buttons
+      wrap.querySelectorAll("button[data-copy]").forEach(btn => {
+        btn.addEventListener("click", () => copyText(btn.getAttribute("data-copy")));
+      });
+    }
+
     async function init(){
+      hideErr();
+
       const b = await fetchBooking();
 
       document.getElementById("bCode").textContent = b.bookingCode || BOOKING_CODE;
       document.getElementById("bStatus").textContent = b.status || "--";
 
-      // Nếu chưa PAID thì báo và cho quay lại checkout
       if(!b.status || (b.status !== "PAID" && b.status !== "SOLD")){
         showErr("Booking chưa thanh toán hoặc đã bị huỷ. Trạng thái: " + (b.status || "N/A"));
       }
@@ -121,7 +252,28 @@
       document.getElementById("methodText").textContent = b.paymentMethodName || "--";
 
       renderSeatChips(b.seats || []);
+
+      // ✅ load tickets
+      try{
+        const tickets = await fetchTicketsByBooking();
+        renderTickets(tickets);
+      }catch(e){
+        document.getElementById("ticketEmpty").textContent = "";
+        showErr(e.message);
+      }
     }
+
+    document.getElementById("btnReloadTickets").addEventListener("click", async () => {
+      hideErr();
+      document.getElementById("ticketEmpty").textContent = "Đang tải vé...";
+      try{
+        const tickets = await fetchTicketsByBooking();
+        renderTickets(tickets);
+      }catch(e){
+        document.getElementById("ticketEmpty").textContent = "";
+        showErr(e.message);
+      }
+    });
 
     init().catch(e => showErr(e.message));
   </script>

@@ -1,0 +1,180 @@
+/* Nếu bạn đã có admin.css thì file này chỉ thêm phần login, giữ tone như admin */
+
+.cb-admin-body{
+  margin:0;
+  min-height:100vh;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color:#eaf0ff;
+  background:
+    radial-gradient(1000px 600px at 20% 20%, rgba(0,170,255,.20), transparent 60%),
+    radial-gradient(900px 700px at 80% 15%, rgba(120,90,255,.22), transparent 55%),
+    radial-gradient(900px 700px at 80% 80%, rgba(0,255,200,.12), transparent 55%),
+    #070b16;
+}
+
+.cb-login-wrap{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+}
+
+.cb-login-card{
+  width:min(980px, 100%);
+  display:grid;
+  grid-template-columns: 1.05fr .95fr;
+  gap:18px;
+
+  padding:18px;
+  border-radius:18px;
+  background: rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow: 0 20px 60px rgba(0,0,0,.45);
+  backdrop-filter: blur(14px);
+}
+
+.cb-login-left{
+  padding:22px;
+  border-radius:14px;
+  background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
+  border:1px solid rgba(255,255,255,.10);
+}
+
+.cb-brand{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:18px;
+}
+.cb-dot{
+  width:14px; height:14px;
+  border-radius:50%;
+  background: linear-gradient(135deg, #5ee7ff, #7c5cff);
+  box-shadow: 0 0 18px rgba(94,231,255,.35);
+}
+.cb-brand-title{ font-weight:800; letter-spacing:.2px; font-size:18px; }
+.cb-brand-sub{ opacity:.75; font-size:13px; margin-top:2px; }
+
+.cb-login-h1{
+  margin:10px 0 6px;
+  font-size:30px;
+  line-height:1.15;
+}
+.cb-login-desc{
+  margin:0 0 14px;
+  opacity:.78;
+}
+
+.cb-login-note{
+  margin-top:16px;
+  padding:14px;
+  border-radius:12px;
+  background: rgba(10,18,38,.45);
+  border:1px solid rgba(255,255,255,.10);
+}
+.cb-note-title{ font-weight:700; margin-bottom:8px; }
+.cb-login-note ul{ margin:0; padding-left:18px; opacity:.85; }
+.cb-login-note li{ margin:6px 0; }
+
+.cb-login-right{
+  padding:22px;
+  border-radius:14px;
+  background: rgba(10,18,38,.35);
+  border:1px solid rgba(255,255,255,.10);
+}
+
+.cb-form-head{ margin-bottom:14px; }
+.cb-form-title{ font-size:20px; font-weight:800; }
+.cb-form-sub{ font-size:13px; opacity:.75; margin-top:4px; }
+
+.cb-field{ display:block; margin-top:12px; }
+.cb-field span{ display:block; font-size:13px; opacity:.85; margin-bottom:6px; }
+
+.cb-field input{
+  width:100%;
+  height:44px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+  color:#eaf0ff;
+  outline:none;
+  padding:0 12px;
+}
+.cb-field input:focus{
+  border-color: rgba(94,231,255,.55);
+  box-shadow: 0 0 0 4px rgba(94,231,255,.12);
+}
+
+.cb-pass-wrap{ position:relative; }
+.cb-eye{
+  position:absolute;
+  right:10px; top:8px;
+  width:30px; height:30px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.06);
+  color:#eaf0ff;
+  cursor:pointer;
+}
+
+.cb-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:12px;
+}
+
+.cb-check{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:13px;
+  opacity:.85;
+}
+.cb-check input{ transform: translateY(1px); }
+
+.cb-link{
+  color:#84d7ff;
+  text-decoration:none;
+  font-size:13px;
+}
+.cb-link:hover{ text-decoration:underline; }
+
+.cb-btn-primary{
+  width:100%;
+  height:46px;
+  margin-top:14px;
+  border:none;
+  border-radius:14px;
+  cursor:pointer;
+  font-weight:800;
+  color:#071018;
+  background: linear-gradient(135deg, #5ee7ff, #7c5cff);
+  box-shadow: 0 14px 30px rgba(124,92,255,.20);
+}
+.cb-btn-primary:disabled{ opacity:.65; cursor:not-allowed; }
+
+.cb-msg{
+  margin-top:12px;
+  min-height:18px;
+  font-size:13px;
+  opacity:.9;
+}
+.cb-msg.ok{ color:#7fffd6; }
+.cb-msg.err{ color:#ff9aa7; }
+
+.cb-form-foot{
+  margin-top:16px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  opacity:.75;
+  font-size:12px;
+}
+.cb-muted{ opacity:.75; }
+
+@media (max-width: 900px){
+  .cb-login-card{ grid-template-columns: 1fr; }
+}

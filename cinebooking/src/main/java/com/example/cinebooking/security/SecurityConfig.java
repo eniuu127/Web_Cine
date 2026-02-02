@@ -16,7 +16,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    // ✅ PHẢI có bean JwtAuthFilter (vì JwtAuthFilter không @Component)
     @Bean
     public JwtAuthFilter jwtAuthFilter() {
         return new JwtAuthFilter();
@@ -37,17 +36,30 @@ public class SecurityConfig {
                 sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         http.authorizeHttpRequests(auth -> auth
-            // CORS preflight
+            // ✅ CORS preflight
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-            // static resources
-            .requestMatchers("/admin/**","/css/**", "/js/**", "/image/**",
-             "/images/**", "/favicon.ico","/static/**").permitAll()
+            // ✅ STATIC resources (Spring Boot static/)
+            .requestMatchers(
+                "/css/**",
+                "/js/**",
+                "/images/**",
+                "/assets/**",
+                "/favicon.ico",
+                "/static/**"
+            ).permitAll()
 
-            // error page
+            // ✅ PUBLIC admin/staff login pages (HTML static)
+            // - bạn đang mở /admin/** rồi, thêm /staff/** để khỏi 403
+            .requestMatchers(
+                "/admin/**",
+                "/staff/**"
+            ).permitAll()
+
+            // ✅ error page
             .requestMatchers("/error", "/error/**").permitAll()
 
-            // UI pages (public)
+            // ✅ UI pages (public)
             .requestMatchers(
                 "/", "/trangchu",
                 "/login",
@@ -57,18 +69,16 @@ public class SecurityConfig {
                 "/tickets/**",
                 "/my-bookings",
                 "/prices",
-                "/seatmap/**" 
+                "/seatmap/**"
             ).permitAll()
 
-            // UI auth page
-            // .requestMatchers("/auth", "/auth/**").permitAll()
-
-            // PUBLIC API/AUTH
-            // PUBLIC 
+            // ✅ PUBLIC API/AUTH
             .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
 
             // /api/auth/me phải cần đăng nhập
             .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()
+
+            // public read APIs
             .requestMatchers(HttpMethod.GET, "/api/movies/**").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/showtimes/**").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/seats/**").permitAll()
@@ -79,6 +89,7 @@ public class SecurityConfig {
             .requestMatchers("/api/bookings/**").hasRole("USER")
             .requestMatchers("/api/payments/**").hasRole("USER")
             .requestMatchers(HttpMethod.GET, "/my-bookings").hasAnyRole("USER","ADMIN")
+            .requestMatchers(HttpMethod.GET, "/api/tickets/**").hasAnyRole("USER","ADMIN")
 
 
             // STAFF
@@ -90,7 +101,6 @@ public class SecurityConfig {
             .anyRequest().authenticated()
         );
 
-        // ✅ dùng bean filter (đừng tạo new filter ở đây)
         http.addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

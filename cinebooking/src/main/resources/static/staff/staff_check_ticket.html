@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Check vé | Staff | CineBooking</title>
+
+  <link rel="stylesheet" href="/css/admin.css"/>
+  <link rel="stylesheet" href="/css/staff.css"/>
+
+  <style>
+    /* phần nhỏ riêng cho trang check vé */
+    .cb-grid-2{margin-top:14px; display:grid; grid-template-columns: 1fr 1fr; gap:14px;}
+    .cb-pill{
+      font-size:12px; padding:6px 10px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(10,18,38,.35);
+      opacity:.9;
+    }
+    .cb-card-head{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;}
+    .cb-video-wrap{
+      position:relative;
+      border-radius:16px;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.12);
+      background:#000;
+      height:280px;
+    }
+    .cb-video-wrap video{width:100%; height:100%; object-fit:cover;}
+    .cb-video-hint{
+      position:absolute; inset:auto 12px 12px 12px;
+      padding:10px 12px; border-radius:14px;
+      background: rgba(0,0,0,.45);
+      border:1px solid rgba(255,255,255,.12);
+      font-size:12px;
+    }
+    .cb-field{margin-top:12px}
+    .cb-field label{display:block; font-size:13px; opacity:.85; margin-bottom:6px}
+    .cb-input{
+      width:100%; height:44px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      color: #eaf0ff;
+      padding:0 12px; outline:none;
+    }
+    .cb-input:focus{
+      border-color: rgba(94,231,255,.55);
+      box-shadow: 0 0 0 4px rgba(94,231,255,.12);
+    }
+    textarea{
+      width:100%; min-height:90px; resize:vertical;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      color: #eaf0ff;
+      padding:10px 12px; outline:none;
+    }
+    .cb-result-title{font-weight:900; margin-bottom:8px;}
+    .cb-divider{margin:14px 0; border-top:1px solid rgba(255,255,255,.10)}
+    .cb-mini-title{font-weight:900;margin-bottom:8px}
+    .cb-mini-list{margin:0;padding-left:18px;color:rgba(234,240,255,.72)}
+    .cb-mini-list li{margin:6px 0}
+    @media (max-width: 1100px){ .cb-grid-2{grid-template-columns:1fr;} }
+  </style>
+</head>
+
+<body class="cb-body">
+<div class="cb-app">
+
+  <!-- SIDEBAR -->
+  <aside class="cb-sb">
+    <div class="cb-brand">
+      <div class="cb-dot"></div>
+      <div>
+        <div class="cb-brand-title">Staff Panel</div>
+        <div class="cb-brand-sub">CineBooking</div>
+      </div>
+    </div>
+
+    <nav class="cb-nav">
+      <a class="cb-nav-item" href="/staff/staff_dashboard.html">
+        <span class="cb-ic">🏠</span> Dashboard
+      </a>
+      <a class="cb-nav-item active" href="/staff/staff_check_ticket.html">
+        <span class="cb-ic">🎫</span> Check vé
+      </a>
+      <a class="cb-nav-item" href="/staff/staff_showtimes.html">
+        <span class="cb-ic">🕒</span> Suất chiếu
+      </a>
+      <a class="cb-nav-item" href="/staff/staff_logs.html">
+        <span class="cb-ic">🧾</span> Logs
+      </a>
+    </nav>
+
+    <div class="cb-sb-foot">
+      <div class="cb-user">
+        <div class="cb-avatar" id="avatar">S</div>
+        <div class="cb-user-info">
+          <div class="cb-user-name" id="staffName">Staff</div>
+          <div class="cb-user-role" id="staffRole">ROLE_STAFF</div>
+        </div>
+      </div>
+      <button class="cb-btn" id="btnLogout">Logout</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="cb-main">
+
+    <!-- TOPBAR -->
+    <header class="cb-topbar">
+      <div>
+        <h1 class="cb-h1">Check vé</h1>
+        <div class="cb-sub"><<include>> Quét mã QR • <<include>> Xác thực vé</div>
+      </div>
+
+      <div class="cb-actions">
+        <button class="cb-btn" id="btnPing">Test token</button>
+        <button class="cb-btn cb-btn-primary" id="btnReload">Refresh</button>
+      </div>
+    </header>
+
+    <!-- GRID 2 CỘT: QR + XÁC THỰC -->
+    <section class="cb-grid-2">
+
+      <!-- (A) QUÉT QR -->
+      <div class="cb-card">
+        <div class="cb-card-head">
+          <div>
+            <div class="cb-panel-title">Quét mã QR</div>
+            <div class="cb-muted">Bật camera → đọc QR → lấy ticketCode</div>
+          </div>
+          <span class="cb-pill">Include</span>
+        </div>
+
+        <div class="cb-video-wrap">
+          <video id="video" playsinline muted></video>
+          <div class="cb-video-hint" id="camHint">Chưa bật camera</div>
+        </div>
+
+        <div class="cb-row">
+          <button class="cb-btn" id="btnStartCam">Bật camera</button>
+          <button class="cb-btn" id="btnStopCam">Tắt camera</button>
+          <button class="cb-btn cb-btn-primary" id="btnUseQr">Dùng QR vừa quét</button>
+        </div>
+
+        <div class="cb-field">
+          <label>Nội dung QR vừa đọc</label>
+          <textarea id="qrRaw" placeholder="QR content..." readonly></textarea>
+          <div class="cb-muted">
+            * Hiện tại trang đã bật camera. Nếu muốn “quét QR thật” (decode ra text) mình sẽ tích hợp ZXing offline vào /static/js.
+          </div>
+        </div>
+      </div>
+
+      <!-- (B) XÁC THỰC / CHECK-IN -->
+      <div class="cb-card">
+        <div class="cb-card-head">
+          <div>
+            <div class="cb-panel-title">Xác thực vé</div>
+            <div class="cb-muted">Nhập mã vé hoặc dùng QR → verify / check-in</div>
+          </div>
+          <span class="cb-pill">Include</span>
+        </div>
+
+        <div class="cb-field">
+          <label>Mã vé (ticketCode)</label>
+          <input id="ticketCode" class="cb-input" placeholder="VD: TCK-2026-000123">
+        </div>
+
+        <div class="cb-row">
+          <button class="cb-btn" id="btnVerify">Xác thực</button>
+          <button class="cb-btn cb-btn-primary" id="btnCheckin">Check-in</button>
+        </div>
+
+        <div class="cb-divider"></div>
+
+        <div class="cb-result-title">Kết quả</div>
+        <pre class="cb-pre" id="resultText">Chưa thao tác</pre>
+
+        <div class="cb-divider"></div>
+
+        <div class="cb-mini-title">Quy tắc xác thực (gợi ý)</div>
+        <ul class="cb-mini-list">
+          <li>Vé tồn tại</li>
+          <li>Trạng thái: PAID/ISSUED</li>
+          <li>Không bị CANCELLED</li>
+          <li>Chưa USED/CHECKED_IN</li>
+          <li>Đúng thời gian suất chiếu (tuỳ chọn)</li>
+        </ul>
+      </div>
+
+    </section>
+
+    <footer class="cb-footer">
+      <span>© CineBooking</span>
+      <span class="cb-muted">Staff • Check Ticket</span>
+    </footer>
+
+  </main>
+</div>
+
+<script src="/js/staff_check_ticket.js"></script>
+</body>
+</html>

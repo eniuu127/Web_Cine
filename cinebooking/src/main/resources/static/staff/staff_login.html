@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Staff Login | CineBooking</title>
+
+  <!-- Nếu bạn đã có admin.css thì cứ đổi link cho đúng -->
+  <link rel="stylesheet" href="/css/admin.css"/>
+  <link rel="stylesheet" href="/css/staff-login.css"/>
+</head>
+
+<body class="cb-admin-body">
+  <div class="cb-login-wrap">
+    <div class="cb-login-card">
+      <div class="cb-login-left">
+        <div class="cb-brand">
+          <div class="cb-dot"></div>
+          <div>
+            <div class="cb-brand-title">Staff Portal</div>
+            <div class="cb-brand-sub">CineBooking</div>
+          </div>
+        </div>
+
+        <h1 class="cb-login-h1">Đăng nhập Staff</h1>
+        <p class="cb-login-desc">
+          Chỉ dành cho nhân viên. Vui lòng đăng nhập bằng tài khoản staff.
+        </p>
+
+        <div class="cb-login-note">
+          <div class="cb-note-title">Lưu ý</div>
+          <ul>
+            <li>Không chia sẻ tài khoản/mật khẩu.</li>
+            <li>Nếu quên mật khẩu, liên hệ Admin để cấp lại.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="cb-login-right">
+        <form id="staffLoginForm" class="cb-form" autocomplete="on">
+          <div class="cb-form-head">
+            <div class="cb-form-title">Đăng nhập</div>
+            <div class="cb-form-sub">Nhập email/sđt và mật khẩu</div>
+          </div>
+
+          <label class="cb-field">
+            <span>Email / SĐT</span>
+            <input id="identifier" type="text" placeholder="staff@cine.com hoặc 09xxxxxxxx" required>
+          </label>
+
+          <label class="cb-field">
+            <span>Mật khẩu</span>
+            <div class="cb-pass-wrap">
+              <input id="password" type="password" placeholder="••••••••" required>
+              <button class="cb-eye" type="button" id="togglePass" aria-label="toggle password">👁</button>
+            </div>
+          </label>
+
+          <div class="cb-row">
+            <label class="cb-check">
+              <input id="remember" type="checkbox">
+              <span>Ghi nhớ đăng nhập</span>
+            </label>
+            <a class="cb-link" href="/admin/admin_login.html">Admin?</a>
+          </div>
+
+          <button id="btnLogin" class="cb-btn-primary" type="submit">
+            Đăng nhập
+          </button>
+
+          <div id="msg" class="cb-msg" aria-live="polite"></div>
+
+          <div class="cb-form-foot">
+            <span class="cb-muted">© CineBooking</span>
+            <a class="cb-link" href="/">Về trang chủ</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/staff-login.js"></script>
+</body>
+</html>

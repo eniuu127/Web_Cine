@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Staff Dashboard | CineBooking</title>
+
+  <!-- nếu bạn đang dùng admin.css thì giữ -->
+  <link rel="stylesheet" href="/css/admin.css"/>
+  <link rel="stylesheet" href="/css/staff.css"/>
+</head>
+
+<body class="cb-body">
+<div class="cb-app">
+
+  <!-- SIDEBAR -->
+  <aside class="cb-sb">
+    <div class="cb-brand">
+      <div class="cb-dot"></div>
+      <div>
+        <div class="cb-brand-title">Staff Panel</div>
+        <div class="cb-brand-sub">CineBooking</div>
+      </div>
+    </div>
+
+    <nav class="cb-nav">
+      <a class="cb-nav-item active" href="/staff/staff_dashboard.html">
+        <span class="cb-ic">🏠</span> Dashboard
+      </a>
+      <a class="cb-nav-item" href="/staff/staff_check_ticket.html">
+        <span class="cb-ic">🎫</span> Check vé
+      </a>
+      <a class="cb-nav-item" href="/staff/staff_showtimes.html">
+        <span class="cb-ic">🕒</span> Suất chiếu
+      </a>
+      <a class="cb-nav-item" href="/staff/staff_logs.html">
+        <span class="cb-ic">🧾</span> Logs
+      </a>
+    </nav>
+
+    <div class="cb-sb-foot">
+      <div class="cb-user">
+        <div class="cb-avatar" id="avatar">S</div>
+        <div class="cb-user-info">
+          <div class="cb-user-name" id="staffName">Staff</div>
+          <div class="cb-user-role" id="staffRole">ROLE_STAFF</div>
+        </div>
+      </div>
+      <button class="cb-btn" id="btnLogout">Logout</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="cb-main">
+
+    <!-- TOPBAR -->
+    <header class="cb-topbar">
+      <div>
+        <h1 class="cb-h1">Staff Dashboard</h1>
+        <div class="cb-sub" id="hello">Xin chào</div>
+      </div>
+
+      <div class="cb-actions">
+        <button class="cb-btn" id="btnPing">Test token</button>
+        <button class="cb-btn cb-btn-primary" id="btnReload">Refresh</button>
+      </div>
+    </header>
+
+    <!-- CARDS -->
+    <section class="cb-grid-4">
+      <div class="cb-card">
+        <div class="cb-card-title">Trạng thái đăng nhập</div>
+        <div class="cb-kpi" id="kpiAuth">—</div>
+        <div class="cb-muted">JWT + phân quyền STAFF</div>
+      </div>
+
+      <div class="cb-card">
+        <div class="cb-card-title">Check vé</div>
+        <div class="cb-kpi">🎫</div>
+        <div class="cb-muted">Quét QR / xác thực vé</div>
+        <div class="cb-row">
+          <a class="cb-link-btn" href="/staff/staff_check_ticket.html">Mở chức năng</a>
+        </div>
+      </div>
+
+      <div class="cb-card">
+        <div class="cb-card-title">Suất chiếu</div>
+        <div class="cb-kpi">🕒</div>
+        <div class="cb-muted">Xem suất chiếu theo ngày</div>
+      </div>
+
+      <div class="cb-card">
+        <div class="cb-card-title">Logs</div>
+        <div class="cb-kpi">🧾</div>
+        <div class="cb-muted">Lịch sử thao tác staff</div>
+      </div>
+    </section>
+
+    <!-- PANEL -->
+    <section class="cb-panels">
+      <div class="cb-panel">
+        <div class="cb-panel-title">Kết quả Test token /api/staff/ping</div>
+        <div class="cb-muted">Dùng để chứng minh token staff gọi API được</div>
+        <pre class="cb-pre" id="pingOut">Chưa test</pre>
+      </div>
+
+      <div class="cb-panel">
+        <div class="cb-panel-title">Lối tắt</div>
+        <div class="cb-muted">Đi tới chức năng chính theo use-case</div>
+        <div class="cb-row" style="margin-top:12px">
+          <a class="cb-link-btn" href="/staff/staff_check_ticket.html">🎫 Check vé</a>
+          <a class="cb-link-btn" href="/staff/staff_login.html">🔐 Login</a>
+        </div>
+      </div>
+    </section>
+
+    <footer class="cb-footer">
+      <span>© CineBooking</span>
+      <span class="cb-muted">Staff module</span>
+    </footer>
+
+  </main>
+</div>
+
+<script src="/js/staff_dashboard.js"></script>
+</body>
+</html>
