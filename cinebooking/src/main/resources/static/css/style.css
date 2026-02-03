@@ -1630,3 +1630,229 @@
   letter-spacing: .02em;
   color: rgba(255,255,255,.8);
 }
+
+/* =========================
+   BOTTOM GRID: COMBO + NEWS
+   ========================= */
+
+.cb-bottom-grid{
+  max-width: 1100px;
+  margin: 28px auto 0;
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 22px;
+  align-items: start;
+}
+
+/* Box container (glass card) */
+.cb-box{
+  border-radius: 18px;
+  padding: 18px 18px 16px;
+  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+  border: 1px solid rgba(255,255,255,.10);
+  box-shadow: 0 10px 28px rgba(0,0,0,.45);
+  backdrop-filter: blur(10px);
+}
+
+.cb-box-title{
+  margin: 0 0 10px;
+  font-size: 22px;
+  letter-spacing: .2px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.cb-center{ text-align: center; }
+
+.cb-muted{
+  color: rgba(255,255,255,.72);
+  line-height: 1.55;
+}
+
+/* =========================
+   COMBO CARDS
+   ========================= */
+.cb-combo-row{
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.cb-combo-card{
+  position: relative;
+  border-radius: 14px;
+  padding: 12px 12px 11px;
+  background: rgba(0,0,0,.35);
+  border: 1px solid rgba(255,255,255,.10);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+  overflow: hidden;
+}
+
+/* Accent line (subtle) */
+.cb-combo-card::before{
+  content:"";
+  position:absolute;
+  top:0; left:0; right:0;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(255,69,69,.85), rgba(255,200,0,.75), rgba(0,180,255,.75));
+  opacity: .75;
+}
+
+.cb-combo-card:hover{
+  transform: translateY(-3px);
+  border-color: rgba(255,255,255,.18);
+  box-shadow: 0 14px 26px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.10);
+}
+
+/* Typography inside combo card */
+.cb-combo-card h4{
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 900;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cb-combo-card p{
+  margin: 0 0 6px;
+  color: rgba(255,255,255,.86);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.cb-combo-card span{
+  display: inline-block;
+  font-size: 12.5px;
+  color: rgba(255,255,255,.68);
+}
+
+/* Optional: make the “Combo 1/2/3” look like a badge */
+.cb-combo-card h4::after{
+  content:"";
+  margin-left:auto;
+  width: 8px; height: 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.25);
+  box-shadow: 0 0 0 4px rgba(255,255,255,.05);
+}
+
+/* =========================
+   NEWS BOX
+   ========================= */
+.cb-news{
+  margin: 10px auto 0;
+  max-width: 520px;
+  color: rgba(255,255,255,.84);
+  line-height: 1.6;
+  font-size: 15px;
+}
+
+/* Make SOLD OUT pop nicely */
+.cb-news b{
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255,69,69,.20);
+  border: 1px solid rgba(255,69,69,.35);
+}
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+@media (max-width: 980px){
+  .cb-bottom-grid{
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px){
+  .cb-box{ padding: 16px 14px; }
+  .cb-box-title{ font-size: 20px; }
+  .cb-combo-row{ grid-template-columns: 1fr; }
+  .cb-combo-card{ padding: 12px; }
+}
+.cb-footer{
+  background:#0b0b0b;
+  padding:28px 0 18px;
+  color:rgba(255,255,255,.75);
+  font-size:14px;
+}
+
+.cb-footer-line{
+  height:1px;
+  background:rgba(255,255,255,.12);
+  margin-bottom:22px;
+}
+
+.cb-footer-grid{
+  display:grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap:24px;
+}
+
+.cb-footer-col h4{
+  color:#fff;
+  font-size:16px;
+  margin-bottom:10px;
+}
+
+.cb-footer-col ul{
+  list-style:none;
+  padding:0;
+  margin:0;
+}
+
+.cb-footer-col li{
+  margin:6px 0;
+}
+
+.cb-footer-col a{
+  color:rgba(255,255,255,.7);
+  text-decoration:none;
+}
+
+.cb-footer-col a:hover{
+  color:#fff;
+}
+
+.cb-footer-social{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-bottom:12px;
+}
+
+.cb-footer-cert{
+  margin-top:10px;
+  padding:6px 10px;
+  border:1px solid rgba(255,255,255,.2);
+  border-radius:6px;
+  font-size:13px;
+  display:inline-block;
+}
+
+.cb-footer-bottom{
+  margin-top:26px;
+  padding-top:14px;
+  border-top:1px solid rgba(255,255,255,.12);
+  text-align:center;
+  font-size:13px;
+  color:rgba(255,255,255,.6);
+}
+
+/* Responsive */
+@media(max-width:900px){
+  .cb-footer-grid{
+    grid-template-columns:1fr 1fr;
+  }
+}
+@media(max-width:520px){
+  .cb-footer-grid{
+    grid-template-columns:1fr;
+  }
+}
+

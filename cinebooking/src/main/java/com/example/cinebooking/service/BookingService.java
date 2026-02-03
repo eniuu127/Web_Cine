@@ -20,7 +20,6 @@ import org.springframework.web.server.ResponseStatusException;
 import com.example.cinebooking.DTO.Booking.BookingDetailDTO;
 import com.example.cinebooking.DTO.Booking.CreateBookingRequest;
 import com.example.cinebooking.DTO.Booking.CreateBookingResponse;
-import com.example.cinebooking.DTO.Event.TicketIssuedEvent;
 import com.example.cinebooking.domain.entity.Booking;
 import com.example.cinebooking.domain.entity.BookingItem;
 import com.example.cinebooking.domain.entity.PaymentMethod;
@@ -28,7 +27,6 @@ import com.example.cinebooking.domain.entity.Seat;
 import com.example.cinebooking.domain.entity.Showtime;
 import com.example.cinebooking.domain.entity.Ticket;
 import com.example.cinebooking.domain.entity.User;
-import com.example.cinebooking.messaging.TicketEventPublisher;
 import com.example.cinebooking.repository.BookingItemRepository;
 import com.example.cinebooking.repository.BookingRepository;
 import com.example.cinebooking.repository.PaymentMethodRepository;
@@ -53,7 +51,6 @@ public class BookingService {
     private final BookingItemRepository bookingItemRepository;
     private final PaymentMethodRepository paymentMethodRepository;
     private final TicketRepository ticketRepository;
-    private final TicketEventPublisher ticketEventPublisher; 
 
     public BookingService(
             BookingRepository bookingRepository,
@@ -63,8 +60,8 @@ public class BookingService {
             RedisSeatHoldService holdService,
             BookingItemRepository bookingItemRepository,
             PaymentMethodRepository paymentMethodRepository,
-            TicketRepository ticketRepository,
-            TicketEventPublisher ticketEventPublisher) {
+            TicketRepository ticketRepository
+) {
 
         this.bookingRepository = bookingRepository;
         this.showtimeRepository = showtimeRepository;
@@ -74,7 +71,7 @@ public class BookingService {
         this.bookingItemRepository = bookingItemRepository;
         this.paymentMethodRepository = paymentMethodRepository;
         this.ticketRepository = ticketRepository;
-        this.ticketEventPublisher = ticketEventPublisher;
+
     }
 
     /**
@@ -353,54 +350,7 @@ public class BookingService {
         // 8) release hold
         holdService.releaseHold(holdId);
 
-        // 9) publish event -> Notification service gửi mail + QR
-try {
-    TicketIssuedEvent ev = new TicketIssuedEvent();
-    ev.bookingCode = booking.getBookingCode();
-
-    // email
-    String email = null;
-    if (booking.getGuestMail() != null && !booking.getGuestMail().isBlank()) {
-        email = booking.getGuestMail();
-    } else if (booking.getUser() != null && booking.getUser().getEmail() != null) {
-        email = booking.getUser().getEmail();
-    }
-    ev.toEmail = email;
-
-    ev.customerName = (booking.getUser() != null && booking.getUser().getFullName() != null)
-            ? booking.getUser().getFullName()
-            : "Khách";
-
-    Showtime st = booking.getShowtime();
-    ev.movieTitle = st.getMovie().getTitle();
-    ev.roomName = st.getRoom().getRoomName();
-    ev.startTime = st.getStartTime();
-    ev.totalAmount = booking.getTotalAmount();
-
-    ev.tickets = tickets.stream().map(t -> {
-        TicketIssuedEvent.TicketItem it = new TicketIssuedEvent.TicketItem();
-        it.ticketCode = t.getTicketCode();
-        it.seatCode = t.getSeat().getSeatCode();
-        it.price = t.getPrice();
-        it.qrContent = t.getQrContent();
-        return it;
-    }).toList();
-
-    // 🔥 CHỈ publish sau khi commit
-    TransactionSynchronizationManager.registerSynchronization(
-        new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                ticketEventPublisher.publishTicketIssued(ev);
-            }
-        }
-    );
-
-} catch (Exception ex) {
-    System.out.println("Build ticket.issued event failed: " + ex.getMessage());
-}
-
-
+        
     }
 
     // ===== ADMIN: REVENUE (reuse - no DTO) =====
