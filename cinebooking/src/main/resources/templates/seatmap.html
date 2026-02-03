@@ -298,15 +298,13 @@
       }
 
       async function loadSeatMap(){
-        const res = await fetch(`/api/showtimes/${showtimeId}/seats`);
-        if(!res.ok) throw new Error("Load seat map failed: " + res.status);
-        seats = await res.json();
+  const res = await fetch(`/api/seats/by-showtime/${showtimeId}`);
+  if(!res.ok) throw new Error("Load seat map failed: " + res.status);
+  seats = await res.json();
 
-        // khi reload seat map thì không xoá lựa chọn (UX tốt hơn),
-        // nhưng nếu ghế bị sold/held thì sẽ tự disable => người dùng bấm lại.
-        renderGrid();
-        updateSummary();
-      }
+  renderGrid();
+  updateSummary();
+}
 
       function startCountdown(expiresAt){
         if (holdTimer) clearInterval(holdTimer);
