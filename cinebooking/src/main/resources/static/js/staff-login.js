@@ -23,10 +23,9 @@
     e.preventDefault();
     setMsg("");
 
-    const email = $("identifier").value.trim();   // ✅ đổi identifier -> email
+    const email = $("identifier").value.trim();
     const password = $("password").value;
 
-    // ✅ validate trước khi gọi API
     if (!email || !password) {
       setMsg("email/password required", "err");
       return;
@@ -39,20 +38,21 @@
       const res = await fetch(LOGIN_API, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // ✅ body gửi đúng field BE hay dùng: email + password
         body: JSON.stringify({ email, password })
       });
 
-      const data = await res.json().catch(() => ({}));
+      const dataText = await res.text();
+      let data = {};
+      try { data = JSON.parse(dataText); } catch { data = { raw: dataText }; }
 
       if (!res.ok) {
-        setMsg(data.message || data.error || "Đăng nhập thất bại", "err");
+        setMsg(data.message || data.error || dataText || "Đăng nhập thất bại", "err");
         return;
       }
 
-      // ✅ Kỳ vọng BE trả về: { token, role, userId, fullName ... }
-      const token = data.token || data.accessToken;
-      const role  = String(data.role || "").toUpperCase();
+      const token = data.token || data.accessToken || data.jwt;
+      const roleRaw = (data.role || data.authority || "").toString();
+      const role = roleRaw.toUpperCase(); // STAFF / ROLE_STAFF
 
       if (!token) {
         setMsg("Thiếu token từ server (BE chưa trả token).", "err");
@@ -65,19 +65,19 @@
         return;
       }
 
-      // Remember
-      const remember = $("remember").checked;
+      const remember = $("remember")?.checked;
       const store = remember ? localStorage : sessionStorage;
 
-      store.setItem("cb_staff_token", token);
-      store.setItem("cb_staff_role", role || "STAFF");
-      store.setItem("cb_staff_name", data.fullName || data.name || "");
+      // ✅ LƯU ĐÚNG KEY dashboard đang đọc
+      store.setItem("cine_token", token);
+      store.setItem("cine_role", role || "ROLE_STAFF");
+      store.setItem("cine_staffName", data.fullName || data.name || data.username || "Staff");
 
       setMsg("✅ Đăng nhập thành công. Đang chuyển trang...", "ok");
-
       window.location.href = "/staff/staff_dashboard.html";
+
     } catch (err) {
-      setMsg("Lỗi kết nối server: " + err.message, "err");
+      setMsg("Lỗi kết nối server: " + (err?.message || err), "err");
     } finally {
       btn.disabled = false;
       btn.textContent = "Đăng nhập";

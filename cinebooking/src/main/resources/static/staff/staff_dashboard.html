@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Staff Dashboard | CineBooking</title>
 
-  <!-- nếu bạn đang dùng admin.css thì giữ -->
   <link rel="stylesheet" href="/css/admin.css"/>
   <link rel="stylesheet" href="/css/staff.css"/>
 </head>
@@ -60,7 +59,7 @@
       </div>
     </header>
 
-    <!-- CARDS -->
+    <!-- KPI -->
     <section class="cb-grid-4">
       <div class="cb-card">
         <div class="cb-card-title">Trạng thái đăng nhập</div>
@@ -69,42 +68,66 @@
       </div>
 
       <div class="cb-card">
-        <div class="cb-card-title">Check vé</div>
-        <div class="cb-kpi"></div>
-        <div class="cb-muted">Quét QR / xác thực vé</div>
-        <div class="cb-row">
-          <a class="cb-link-btn" href="/staff/staff_check_ticket.html">Mở chức năng</a>
-        </div>
+        <div class="cb-card-title">Số lượt check vé hôm nay</div>
+        <div class="cb-kpi" id="kpiToday">0</div>
+        <div class="cb-muted">Tổng lượt verify/check-in</div>
       </div>
 
       <div class="cb-card">
-        <div class="cb-card-title">Suất chiếu</div>
-        <div class="cb-kpi"></div>
-        <div class="cb-muted">Xem suất chiếu theo ngày</div>
+        <div class="cb-card-title">Số lượt check-in thành công</div>
+        <div class="cb-kpi" id="kpiOk">0</div>
+        <div class="cb-muted">Số lượt thành công hôm nay</div>
       </div>
 
       <div class="cb-card">
-        <div class="cb-card-title">Logs</div>
-        <div class="cb-kpi"></div>
-        <div class="cb-muted">Lịch sử thao tác staff</div>
+        <div class="cb-card-title">Tỉ lệ thành công</div>
+        <div class="cb-kpi" id="kpiRate">0%</div>
+        <div class="cb-muted">Tỉ lệ thành công trong hôm nay</div>
       </div>
     </section>
 
-    <!-- PANEL -->
+    <!-- PANELS -->
     <section class="cb-panels">
       <div class="cb-panel">
-        <div class="cb-panel-title">Kết quả Test token /api/staff/ping</div>
-        <div class="cb-muted">Dùng để chứng minh token staff gọi API được</div>
-        <pre class="cb-pre" id="pingOut">Chưa test</pre>
+        <div class="cb-panel-title">Lịch sử check vé (gần nhất)</div>
+        <!-- <div class="cb-muted">Lưu localStorage để demo (không phụ thuộc backend)</div> -->
+
+        <div class="cb-row" style="margin-top:10px; gap:10px; flex-wrap:wrap;">
+          <!-- <button class="cb-btn" id="btnClearLogs">Xoá lịch sử</button> -->
+          <a class="cb-link-btn" href="/staff/staff_check_ticket.html"> Đi check vé</a>
+        </div>
+
+        <div style="margin-top:12px; overflow:auto; border-radius:14px; border:1px solid rgba(255,255,255,.12);">
+          <table style="width:100%; border-collapse:collapse; min-width:720px;">
+            <thead>
+              <tr style="background: rgba(255,255,255,.06); text-align:left;">
+                <th style="padding:12px;">Thời gian</th>
+                <th style="padding:12px;">Hành động</th>
+                <th style="padding:12px;">TicketCode</th>
+                <th style="padding:12px;">Kết quả</th>
+                <th style="padding:12px;">Ghi chú</th>
+              </tr>
+            </thead>
+            <tbody id="logBody">
+              <tr><td colspan="5" style="padding:12px; opacity:.75;">Chưa có dữ liệu</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div class="cb-panel">
         <div class="cb-panel-title">Lối tắt</div>
-        <div class="cb-muted">Đi tới chức năng chính theo use-case</div>
+        <div class="cb-muted">Đi tới chức năng chính </div>
+
         <div class="cb-row" style="margin-top:12px">
-          <a class="cb-link-btn" href="/staff/staff_check_ticket.html">🎫 Check vé</a>
-          <a class="cb-link-btn" href="/staff/staff_login.html">🔐 Login</a>
+          <a class="cb-link-btn" href="/staff/staff_check_ticket.html"> Check vé</a>
+          <a class="cb-link-btn" href="/staff/staff_login.html"> Login</a>
         </div>
+
+        <div class="cb-divider" style="margin:14px 0; border-top:1px solid rgba(255,255,255,.10)"></div>
+
+        <div class="cb-panel-title">Test token /api/staff/ping</div>
+        <pre class="cb-pre" id="pingOut">Chưa test</pre>
       </div>
     </section>
 
